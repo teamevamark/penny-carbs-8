@@ -172,6 +172,174 @@ export type Database = {
         }
         Relationships: []
       }
+      cooks: {
+        Row: {
+          allowed_order_types: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_available: boolean
+          kitchen_name: string
+          mobile_number: string
+          panchayat_id: string | null
+          rating: number | null
+          total_orders: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          allowed_order_types?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          kitchen_name: string
+          mobile_number: string
+          panchayat_id?: string | null
+          rating?: number | null
+          total_orders?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          allowed_order_types?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_available?: boolean
+          kitchen_name?: string
+          mobile_number?: string
+          panchayat_id?: string | null
+          rating?: number | null
+          total_orders?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cooks_panchayat_id_fkey"
+            columns: ["panchayat_id"]
+            isOneToOne: false
+            referencedRelation: "panchayats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_staff: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          assigned_wards: number[] | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          is_approved: boolean
+          is_available: boolean
+          mobile_number: string
+          name: string
+          panchayat_id: string | null
+          rating: number | null
+          staff_type: string
+          total_deliveries: number | null
+          updated_at: string
+          user_id: string | null
+          vehicle_number: string | null
+          vehicle_type: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_wards?: number[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_approved?: boolean
+          is_available?: boolean
+          mobile_number: string
+          name: string
+          panchayat_id?: string | null
+          rating?: number | null
+          staff_type?: string
+          total_deliveries?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_number?: string | null
+          vehicle_type: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assigned_wards?: number[] | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          is_approved?: boolean
+          is_available?: boolean
+          mobile_number?: string
+          name?: string
+          panchayat_id?: string | null
+          rating?: number | null
+          staff_type?: string
+          total_deliveries?: number | null
+          updated_at?: string
+          user_id?: string | null
+          vehicle_number?: string | null
+          vehicle_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_staff_panchayat_id_fkey"
+            columns: ["panchayat_id"]
+            isOneToOne: false
+            referencedRelation: "panchayats"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_wallets: {
+        Row: {
+          collected_amount: number
+          created_at: string
+          delivery_staff_id: string
+          id: string
+          job_earnings: number
+          total_settled: number
+          updated_at: string
+        }
+        Insert: {
+          collected_amount?: number
+          created_at?: string
+          delivery_staff_id: string
+          id?: string
+          job_earnings?: number
+          total_settled?: number
+          updated_at?: string
+        }
+        Update: {
+          collected_amount?: number
+          created_at?: string
+          delivery_staff_id?: string
+          id?: string
+          job_earnings?: number
+          total_settled?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_wallets_delivery_staff_id_fkey"
+            columns: ["delivery_staff_id"]
+            isOneToOne: true
+            referencedRelation: "delivery_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       event_types: {
         Row: {
           created_at: string
@@ -345,6 +513,47 @@ export type Database = {
           },
         ]
       }
+      indoor_event_vehicles: {
+        Row: {
+          created_at: string
+          driver_mobile: string
+          driver_name: string | null
+          id: string
+          notes: string | null
+          order_id: string
+          updated_at: string
+          vehicle_number: string
+        }
+        Insert: {
+          created_at?: string
+          driver_mobile: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          order_id: string
+          updated_at?: string
+          vehicle_number: string
+        }
+        Update: {
+          created_at?: string
+          driver_mobile?: string
+          driver_name?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string
+          updated_at?: string
+          vehicle_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indoor_event_vehicles_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_items: {
         Row: {
           created_at: string
@@ -406,10 +615,17 @@ export type Database = {
           cook_assignment_status: string | null
           cook_responded_at: string | null
           cook_response_deadline: string | null
+          cook_status: string | null
           created_at: string
           customer_id: string
+          delivered_at: string | null
           delivery_address: string | null
+          delivery_amount: number | null
+          delivery_earnings: number | null
+          delivery_eta: string | null
           delivery_instructions: string | null
+          delivery_status: string | null
+          estimated_delivery_minutes: number | null
           event_date: string | null
           event_details: string | null
           event_type_id: string | null
@@ -438,10 +654,17 @@ export type Database = {
           cook_assignment_status?: string | null
           cook_responded_at?: string | null
           cook_response_deadline?: string | null
+          cook_status?: string | null
           created_at?: string
           customer_id: string
+          delivered_at?: string | null
           delivery_address?: string | null
+          delivery_amount?: number | null
+          delivery_earnings?: number | null
+          delivery_eta?: string | null
           delivery_instructions?: string | null
+          delivery_status?: string | null
+          estimated_delivery_minutes?: number | null
           event_date?: string | null
           event_details?: string | null
           event_type_id?: string | null
@@ -470,10 +693,17 @@ export type Database = {
           cook_assignment_status?: string | null
           cook_responded_at?: string | null
           cook_response_deadline?: string | null
+          cook_status?: string | null
           created_at?: string
           customer_id?: string
+          delivered_at?: string | null
           delivery_address?: string | null
+          delivery_amount?: number | null
+          delivery_earnings?: number | null
+          delivery_eta?: string | null
           delivery_instructions?: string | null
+          delivery_status?: string | null
+          estimated_delivery_minutes?: number | null
           event_date?: string | null
           event_details?: string | null
           event_type_id?: string | null
@@ -724,6 +954,60 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          delivery_staff_id: string
+          description: string | null
+          id: string
+          order_id: string | null
+          status: string
+          transaction_type: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delivery_staff_id: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string
+          transaction_type: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          delivery_staff_id?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          status?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_delivery_staff_id_fkey"
+            columns: ["delivery_staff_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_staff"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -740,6 +1024,8 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_cook: { Args: { _user_id: string }; Returns: boolean }
+      is_delivery_staff: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "cook" | "delivery_staff" | "customer"
@@ -748,6 +1034,7 @@ export type Database = {
         | "accepted"
         | "rejected"
         | "auto_rejected"
+      delivery_staff_type: "fixed_salary" | "registered_partner"
       order_status:
         | "pending"
         | "confirmed"
@@ -892,6 +1179,7 @@ export const Constants = {
         "rejected",
         "auto_rejected",
       ],
+      delivery_staff_type: ["fixed_salary", "registered_partner"],
       order_status: [
         "pending",
         "confirmed",
