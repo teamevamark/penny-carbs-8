@@ -14,7 +14,8 @@ import {
   Settings,
   MapPin,
   LogOut,
-  ChefHat
+  ChefHat,
+  Image
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -60,6 +61,13 @@ const AdminDashboard: React.FC = () => {
       path: '/admin/items', 
       color: 'bg-success/10 text-success',
       description: 'Menu management'
+    },
+    { 
+      icon: Image, 
+      label: 'Banners', 
+      path: '/admin/banners', 
+      color: 'bg-purple-500/10 text-purple-600',
+      description: 'Homepage carousel'
     },
     { 
       icon: Users, 
