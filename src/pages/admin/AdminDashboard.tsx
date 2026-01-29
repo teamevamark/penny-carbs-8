@@ -13,7 +13,8 @@ import {
   BarChart3,
   Settings,
   MapPin,
-  LogOut
+  LogOut,
+  ChefHat
 } from 'lucide-react';
 
 const AdminDashboard: React.FC = () => {
@@ -68,9 +69,16 @@ const AdminDashboard: React.FC = () => {
       description: 'Customers & Staff'
     },
     { 
+      icon: ChefHat, 
+      label: 'Cooks', 
+      path: '/admin/cooks', 
+      color: 'bg-amber-500/10 text-amber-600',
+      description: 'Food Partners'
+    },
+    { 
       icon: Truck, 
       label: 'Delivery Staff', 
-      path: '/admin/delivery', 
+      path: '/admin/delivery-staff', 
       color: 'bg-indoor-events/10 text-indoor-events',
       description: 'Delivery partners'
     },

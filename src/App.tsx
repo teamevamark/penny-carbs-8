@@ -18,11 +18,22 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import IndoorEventBooking from "./pages/IndoorEventBooking";
 import CloudKitchenOrder from "./pages/CloudKitchenOrder";
+import HomemadeOrder from "./pages/HomemadeOrder";
+
+// Cook Pages
+import CookLogin from "./pages/cook/CookLogin";
+import CookDashboard from "./pages/cook/CookDashboard";
+
+// Delivery Pages
+import DeliveryApply from "./pages/delivery/DeliveryApply";
+import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminItems from "./pages/admin/AdminItems";
 import AdminLocations from "./pages/admin/AdminLocations";
+import AdminCooks from "./pages/admin/AdminCooks";
+import AdminDeliveryStaff from "./pages/admin/AdminDeliveryStaff";
 
 const queryClient = new QueryClient();
 
@@ -41,16 +52,27 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/book-event" element={<IndoorEventBooking />} />
                 <Route path="/cloud-kitchen" element={<CloudKitchenOrder />} />
+                <Route path="/homemade" element={<HomemadeOrder />} />
                 <Route path="/menu/:serviceType" element={<Menu />} />
                 <Route path="/item/:itemId" element={<ItemDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/profile" element={<Profile />} />
                 
+                {/* Cook Routes */}
+                <Route path="/cook/login" element={<CookLogin />} />
+                <Route path="/cook/dashboard" element={<CookDashboard />} />
+                
+                {/* Delivery Routes */}
+                <Route path="/delivery/apply" element={<DeliveryApply />} />
+                <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
+                
                 {/* Admin Routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/items" element={<AdminItems />} />
                 <Route path="/admin/locations" element={<AdminLocations />} />
+                <Route path="/admin/cooks" element={<AdminCooks />} />
+                <Route path="/admin/delivery-staff" element={<AdminDeliveryStaff />} />
                 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
