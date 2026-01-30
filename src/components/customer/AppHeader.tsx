@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Search, User, ChevronDown, LogOut, ShoppingBag, Settings } from 'lucide-react';
+import { MapPin, Search, User, ChevronDown, LogOut, ShoppingBag, Settings, Truck } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 interface AppHeaderProps {
@@ -75,23 +75,35 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
             className="h-10 w-auto cursor-pointer hidden sm:block" 
             onClick={() => navigate('/')}
           />
-          {/* Location Selector */}
-          <button
-            onClick={() => setLocationDialogOpen(true)}
-            className="flex items-center gap-1 text-left"
-          >
-            <MapPin className="h-5 w-5 text-primary" />
-            <div className="hidden sm:block">
-              <p className="text-xs text-muted-foreground">Deliver to</p>
-              <p className="flex items-center text-sm font-medium">
-                {selectedWardNumber 
-                  ? `Ward ${selectedWardNumber}, ${selectedPanchayat?.name}` 
-                  : selectedPanchayat?.name || 'Select Location'}
-                <ChevronDown className="ml-1 h-4 w-4" />
-              </p>
-            </div>
-            <ChevronDown className="h-4 w-4 sm:hidden" />
-          </button>
+          {/* Location Selector with Customer Login */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLocationDialogOpen(true)}
+              className="flex items-center gap-1 text-left"
+            >
+              <MapPin className="h-5 w-5 text-primary" />
+              <div className="hidden sm:block">
+                <p className="text-xs text-muted-foreground">Deliver to</p>
+                <p className="flex items-center text-sm font-medium">
+                  {selectedWardNumber 
+                    ? `Ward ${selectedWardNumber}, ${selectedPanchayat?.name}` 
+                    : selectedPanchayat?.name || 'Select Location'}
+                  <ChevronDown className="ml-1 h-4 w-4" />
+                </p>
+              </div>
+              <ChevronDown className="h-4 w-4 sm:hidden" />
+            </button>
+            {!user && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/customer-auth')}
+                className="hidden sm:flex"
+              >
+                Login
+              </Button>
+            )}
+          </div>
 
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex-1">
@@ -146,8 +158,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button onClick={() => navigate('/auth')} size="sm">
-              Login
+            <Button onClick={() => navigate('/auth')} size="sm" variant="ghost" className="gap-1">
+              <Truck className="h-4 w-4" />
+              <span className="hidden sm:inline">Delivery/Food Partner</span>
             </Button>
           )}
         </div>
