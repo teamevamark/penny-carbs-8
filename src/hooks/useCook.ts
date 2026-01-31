@@ -1,15 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getCookSession } from '@/pages/cook/CookLogin';
+import { useAuth } from '@/contexts/AuthContext';
 import type { Cook, CookOrder, CookStatus } from '@/types/cook';
 
 export function useCookProfile() {
-  const session = getCookSession();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: ['cook-profile', session?.cookId],
+    queryKey: ['cook-profile', user?.id],
     queryFn: async () => {
-      if (!session?.cookId) return null;
+      if (!user?.id) return null;
 
       const { data, error } = await supabase
         .from('cooks')
@@ -17,29 +17,31 @@ export function useCookProfile() {
           *,
           panchayat:panchayats(id, name)
         `)
-        .eq('id', session.cookId)
+        .eq('user_id', user.id)
+        .eq('is_active', true)
         .maybeSingle();
 
       if (error) throw error;
       return data as Cook | null;
     },
-    enabled: !!session?.cookId,
+    enabled: !!user?.id,
   });
 }
 
 export function useCookOrders() {
-  const session = getCookSession();
+  const { user } = useAuth();
+  const { data: profile } = useCookProfile();
 
   return useQuery({
-    queryKey: ['cook-orders', session?.cookId],
+    queryKey: ['cook-orders', profile?.id],
     queryFn: async () => {
-      if (!session?.cookId) return [];
+      if (!profile?.id) return [];
 
       // Fetch assignments from order_assigned_cooks
       const { data: assignments, error: assignError } = await supabase
         .from('order_assigned_cooks')
         .select('order_id, cook_status')
-        .eq('cook_id', session.cookId)
+        .eq('cook_id', profile.id)
         .in('cook_status', ['pending', 'accepted', 'preparing', 'cooked']);
 
       if (assignError) throw assignError;
@@ -87,17 +89,17 @@ export function useCookOrders() {
       
       return ordersWithCustomers as CookOrder[];
     },
-    enabled: !!session?.cookId,
+    enabled: !!profile?.id,
   });
 }
 
 export function useUpdateCookStatus() {
   const queryClient = useQueryClient();
-  const session = getCookSession();
+  const { data: profile } = useCookProfile();
 
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: CookStatus }) => {
-      if (!session?.cookId) throw new Error('Not authenticated');
+      if (!profile?.id) throw new Error('Not authenticated');
 
       // Update the assignment status
       const { error } = await supabase
@@ -108,7 +110,7 @@ export function useUpdateCookStatus() {
           updated_at: new Date().toISOString(),
         })
         .eq('order_id', orderId)
-        .eq('cook_id', session.cookId);
+        .eq('cook_id', profile.id);
 
       if (error) throw error;
     },
@@ -120,16 +122,16 @@ export function useUpdateCookStatus() {
 
 export function useUpdateCookAvailability() {
   const queryClient = useQueryClient();
-  const session = getCookSession();
+  const { data: profile } = useCookProfile();
 
   return useMutation({
     mutationFn: async (isAvailable: boolean) => {
-      if (!session?.cookId) throw new Error('Not authenticated');
+      if (!profile?.id) throw new Error('Not authenticated');
 
       const { error } = await supabase
         .from('cooks')
         .update({ is_available: isAvailable })
-        .eq('id', session.cookId);
+        .eq('id', profile.id);
 
       if (error) throw error;
     },

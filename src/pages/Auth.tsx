@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Phone, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import logo from '@/assets/logo.png';
+
 const loginSchema = z.object({
   mobileNumber: z.string()
     .min(10, 'Mobile number must be 10 digits')
@@ -42,7 +44,7 @@ type SignupFormData = z.infer<typeof signupSchema>;
 
 const Auth: React.FC = () => {
   const navigate = useNavigate();
-  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
+  const { signIn, signUp, user, role, isLoading: authLoading } = useAuth();
   const { panchayats, getWardsForPanchayat, isLoading: locationLoading } = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
@@ -79,12 +81,53 @@ const Auth: React.FC = () => {
     signupForm.setValue('wardNumber', '');
   }, [selectedPanchayatId]);
 
-  // Redirect if already logged in
+  // Redirect based on role after login
   useEffect(() => {
     if (user && !authLoading) {
+      // Check if user is cook or delivery staff and redirect accordingly
+      checkStaffStatusAndRedirect(user.id);
+    }
+  }, [user, authLoading]);
+
+  const checkStaffStatusAndRedirect = async (userId: string) => {
+    try {
+      // Check if user is a cook
+      const { data: cook } = await supabase
+        .from('cooks')
+        .select('id, is_active')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (cook) {
+        navigate('/cook/dashboard');
+        return;
+      }
+
+      // Check if user is delivery staff
+      const { data: delivery } = await supabase
+        .from('delivery_staff')
+        .select('id, is_active, is_approved')
+        .eq('user_id', userId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (delivery) {
+        navigate('/delivery/dashboard');
+        return;
+      }
+
+      // Default redirect for admin/super_admin or regular users
+      if (role === 'super_admin' || role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error checking staff status:', error);
       navigate('/');
     }
-  }, [user, authLoading, navigate]);
+  };
 
   const handleLogin = async (data: LoginFormData) => {
     setIsSubmitting(true);
@@ -101,7 +144,7 @@ const Auth: React.FC = () => {
           title: "Welcome back!",
           description: "You have been logged in successfully",
         });
-        navigate('/');
+        // Redirect will be handled by useEffect
       }
     } finally {
       setIsSubmitting(false);

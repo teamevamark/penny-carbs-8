@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCookProfile, useCookOrders, useUpdateCookStatus, useUpdateCookAvailability } from '@/hooks/useCook';
-import { getCookSession, clearCookSession } from '@/pages/cook/CookLogin';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +32,7 @@ const statusConfig: Record<CookStatus, { label: string; color: string; icon: Rea
 
 const CookDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const session = getCookSession();
+  const { user, signOut, isLoading: authLoading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useCookProfile();
   const { data: orders, isLoading: ordersLoading } = useCookOrders();
   const updateStatus = useUpdateCookStatus();
@@ -40,14 +40,14 @@ const CookDashboard: React.FC = () => {
 
   // Redirect if not logged in
   useEffect(() => {
-    if (!session) {
-      navigate('/cook/login');
+    if (!authLoading && !user) {
+      navigate('/auth');
     }
-  }, [session, navigate]);
+  }, [user, authLoading, navigate]);
 
-  const handleLogout = () => {
-    clearCookSession();
-    navigate('/cook/login');
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/auth');
   };
 
   const handleStatusUpdate = async (orderId: string, newStatus: CookStatus) => {

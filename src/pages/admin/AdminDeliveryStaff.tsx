@@ -106,6 +106,15 @@ const AdminDeliveryStaff: React.FC = () => {
         .maybeSingle();
       
       if (existing) throw new Error('User is already registered as delivery staff');
+
+      // Check if user is already a cook
+      const { data: existingCook } = await supabase
+        .from('cooks')
+        .select('id')
+        .eq('user_id', selectedUser.user_id)
+        .maybeSingle();
+      
+      if (existingCook) throw new Error('This user is already registered as cook. A user can only be cook OR delivery staff.');
       
       const { error } = await supabase
         .from('delivery_staff')
@@ -123,13 +132,13 @@ const AdminDeliveryStaff: React.FC = () => {
       
       if (error) throw error;
 
-      // Add delivery_staff role
+      // Update user role to delivery_staff
       await supabase
         .from('user_roles')
-        .insert({
+        .upsert({
           user_id: selectedUser.user_id,
           role: 'delivery_staff',
-        });
+        }, { onConflict: 'user_id' });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-delivery-approved'] });

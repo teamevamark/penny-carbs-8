@@ -38,10 +38,9 @@ const cookSchema = z.object({
     .min(10, 'Mobile number must be 10 digits')
     .max(10, 'Mobile number must be 10 digits')
     .regex(/^\d+$/, 'Mobile number must contain only digits'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
   panchayatId: z.string().min(1, 'Please select a panchayat'),
   allowedOrderTypes: z.array(z.string()).min(1, 'Select at least one order type'),
-  userId: z.string().optional(),
+  userId: z.string().min(1, 'Please select a staff member first'),
 });
 
 type CookFormData = z.infer<typeof cookSchema>;
@@ -193,7 +192,6 @@ const AdminCooks: React.FC = () => {
     defaultValues: {
       kitchenName: '',
       mobileNumber: '',
-      password: '',
       panchayatId: '',
       allowedOrderTypes: ['indoor_events', 'cloud_kitchen', 'homemade'],
       userId: '',
@@ -272,6 +270,10 @@ const AdminCooks: React.FC = () => {
   const handleSubmit = async (data: CookFormData) => {
     setIsSubmitting(true);
     try {
+      if (!data.userId) {
+        throw new Error('Please select a staff member first');
+      }
+
       // Check if cook with this mobile already exists
       const { data: existingCook } = await supabase
         .from('cooks')
@@ -283,7 +285,18 @@ const AdminCooks: React.FC = () => {
         throw new Error('A cook with this mobile number already exists');
       }
 
-      // Create cook record with password stored directly
+      // Check if user is already a delivery staff
+      const { data: existingDelivery } = await supabase
+        .from('delivery_staff')
+        .select('id')
+        .eq('user_id', data.userId)
+        .maybeSingle();
+      
+      if (existingDelivery) {
+        throw new Error('This user is already registered as delivery staff. A user can only be cook OR delivery staff.');
+      }
+
+      // Create cook record linked to the existing user
       const { error: cookError } = await supabase
         .from('cooks')
         .insert({
@@ -291,16 +304,23 @@ const AdminCooks: React.FC = () => {
           mobile_number: data.mobileNumber,
           panchayat_id: data.panchayatId,
           allowed_order_types: data.allowedOrderTypes,
-          password_hash: data.password,
-          user_id: data.userId || null, // Link to existing user if selected from staff
+          user_id: data.userId,
           created_by: user?.id,
         });
 
       if (cookError) throw cookError;
 
+      // Add cook role to the user
+      await supabase
+        .from('user_roles')
+        .upsert({
+          user_id: data.userId,
+          role: 'cook',
+        }, { onConflict: 'user_id' });
+
       toast({
         title: "Cook Registered",
-        description: `${data.kitchenName} has been registered. Login: Mobile Number + Password`,
+        description: `${data.kitchenName} has been registered. They can now login via Staff Login.`,
       });
 
       handleClearSelection();
@@ -487,17 +507,8 @@ const AdminCooks: React.FC = () => {
                 )}
               </div>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">
-                    Or enter manually
-                  </span>
-                </div>
-              </div>
-
+              {/* Only show form when a staff member is selected */}
+              {selectedStaff ? (
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
 
@@ -537,22 +548,12 @@ const AdminCooks: React.FC = () => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Login Password</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Min 6 characters" {...field} />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Cook will login using Mobile Number + this password
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Note: No password field - cook uses their existing staff login credentials */}
+                  {selectedStaff && (
+                    <p className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                      📝 Cook will login via Staff Login using their existing credentials
+                    </p>
+                  )}
 
                   <FormField
                     control={form.control}
@@ -617,6 +618,12 @@ const AdminCooks: React.FC = () => {
                   </Button>
                 </form>
               </Form>
+              ) : (
+                <div className="text-center py-6 text-muted-foreground">
+                  <User className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Search and select a registered staff member above to add them as a cook</p>
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </div>
