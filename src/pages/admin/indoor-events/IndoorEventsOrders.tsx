@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2 } from 'lucide-react';
+import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2, RotateCcw } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -531,6 +531,12 @@ const IndoorEventsOrders: React.FC = () => {
                   {selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'delivered' && (
                     <Button size="sm" variant="destructive" onClick={() => handleUpdateStatus(selectedOrder.id, 'cancelled')}>
                       Cancel
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'cancelled' && (
+                    <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(selectedOrder.id, 'pending')}>
+                      <RotateCcw className="h-4 w-4 mr-1" />
+                      Restore Order
                     </Button>
                   )}
                 </div>
