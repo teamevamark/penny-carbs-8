@@ -22,7 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { MapPin, Search, User, ChevronDown, LogOut, ShoppingBag, Settings, Truck, Phone, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -44,17 +44,9 @@ interface AppHeaderProps {
 const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
   const navigate = useNavigate();
   const { user, profile, signOut, role, customerSignIn } = useAuth();
-  const { 
-    panchayats, 
-    selectedPanchayat, 
-    selectedWardNumber, 
-    setSelectedPanchayat, 
-    setSelectedWardNumber,
-    getWardsForPanchayat 
-  } = useLocation();
+  const { selectedPanchayat, selectedWardNumber, isLocationSet } = useLocation();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [customerLoginOpen, setCustomerLoginOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showNotRegistered, setShowNotRegistered] = useState(false);
@@ -111,18 +103,12 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
     navigate('/customer-auth', { state: { mobileNumber: attemptedMobile, tab: 'signup' } });
   };
 
-  const handlePanchayatChange = (panchayatId: string) => {
-    const panchayat = panchayats.find(p => p.id === panchayatId);
-    setSelectedPanchayat(panchayat || null);
-    setSelectedWardNumber(null);
-  };
-
-  const handleWardChange = (wardNumber: string) => {
-    setSelectedWardNumber(parseInt(wardNumber, 10));
-    setLocationDialogOpen(false);
-  };
-
-  const availableWards = selectedPanchayat ? getWardsForPanchayat(selectedPanchayat) : [];
+  // Location display - derived from user profile
+  const locationDisplay = isLocationSet
+    ? `Ward ${selectedWardNumber}, ${selectedPanchayat?.name}`
+    : user
+      ? 'Update location in profile'
+      : 'Login to set location';
 
   return (
     <>
@@ -135,19 +121,17 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
             className="h-10 w-auto cursor-pointer hidden sm:block" 
             onClick={() => navigate('/')}
           />
-          {/* Location Selector with Customer Login */}
+          {/* Location Display - strictly from profile */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setLocationDialogOpen(true)}
+              onClick={() => user ? navigate('/profile') : setCustomerLoginOpen(true)}
               className="flex items-center gap-1 text-left"
             >
               <MapPin className="h-5 w-5 text-primary" />
               <div className="hidden sm:block">
                 <p className="text-xs text-muted-foreground">Deliver to</p>
                 <p className="flex items-center text-sm font-medium">
-                  {selectedWardNumber 
-                    ? `Ward ${selectedWardNumber}, ${selectedPanchayat?.name}` 
-                    : selectedPanchayat?.name || 'Select Location'}
+                  {locationDisplay}
                   <ChevronDown className="ml-1 h-4 w-4" />
                 </p>
               </div>
@@ -230,58 +214,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({ onSearch }) => {
         </div>
       </header>
 
-      {/* Location Selection Dialog */}
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              Select Your Location
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Panchayat</label>
-              <Select
-                value={selectedPanchayat?.id || ''}
-                onValueChange={handlePanchayatChange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Panchayat" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  {panchayats.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({p.ward_count} wards)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedPanchayat && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Ward</label>
-                <Select
-                  value={selectedWardNumber?.toString() || ''}
-                  onValueChange={handleWardChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Ward" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover max-h-60">
-                    {availableWards.map((wardNum) => (
-                      <SelectItem key={wardNum} value={wardNum.toString()}>
-                        Ward {wardNum}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
       {/* Customer Login Dialog */}
       <Dialog open={customerLoginOpen} onOpenChange={setCustomerLoginOpen}>
         <DialogContent className="sm:max-w-md">

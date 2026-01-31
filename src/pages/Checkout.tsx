@@ -10,13 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { ArrowLeft, MapPin, ShoppingBag, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -24,7 +17,7 @@ const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { items, totalAmount, clearCart } = useCart();
   const { user, profile } = useAuth();
-  const { panchayats, selectedPanchayat, selectedWardNumber, setSelectedPanchayat, setSelectedWardNumber, getWardsForPanchayat } = useLocation();
+  const { selectedPanchayat, selectedWardNumber, isLocationSet } = useLocation();
 
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
@@ -62,16 +55,32 @@ const Checkout: React.FC = () => {
     );
   }
 
-  const handlePlaceOrder = async () => {
-    if (!selectedPanchayat || !selectedWardNumber) {
-      toast({
-        title: 'Location Required',
-        description: 'Please select your panchayat and ward',
-        variant: 'destructive',
-      });
-      return;
-    }
+  // Check if user has location set in their profile
+  if (!isLocationSet) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 flex h-14 items-center gap-3 border-b bg-card px-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="font-display text-lg font-semibold">Checkout</h1>
+        </header>
 
+        <div className="flex flex-col items-center justify-center py-20 px-4">
+          <MapPin className="h-16 w-16 text-muted-foreground" />
+          <h2 className="mt-4 text-xl font-semibold">Location Required</h2>
+          <p className="mt-2 text-center text-muted-foreground">
+            Please update your profile with your Panchayat and Ward to continue
+          </p>
+          <Button className="mt-6" onClick={() => navigate('/profile')}>
+            Update Profile
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const handlePlaceOrder = async () => {
     if (!deliveryAddress.trim()) {
       toast({
         title: 'Address Required',
@@ -95,8 +104,8 @@ const Checkout: React.FC = () => {
           customer_id: user.id,
           service_type: serviceType as 'indoor_events' | 'cloud_kitchen' | 'homemade',
           total_amount: totalAmount,
-          panchayat_id: selectedPanchayat.id,
-          ward_number: selectedWardNumber,
+          panchayat_id: selectedPanchayat!.id,
+          ward_number: selectedWardNumber!,
           delivery_address: deliveryAddress,
           delivery_instructions: deliveryInstructions || null,
         }])
@@ -154,7 +163,7 @@ const Checkout: React.FC = () => {
       </header>
 
       <main className="p-4 space-y-4">
-        {/* Delivery Location */}
+        {/* Delivery Location - From User Profile (Read-Only) */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -163,48 +172,12 @@ const Checkout: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="panchayat">Panchayat *</Label>
-                <Select
-                  value={selectedPanchayat?.id || ''}
-                  onValueChange={(value) => {
-                    const panchayat = panchayats.find(p => p.id === value);
-                    setSelectedPanchayat(panchayat || null);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Panchayat" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {panchayats.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="ward">Ward Number *</Label>
-                <Select
-                  value={selectedWardNumber?.toString() || ''}
-                  onValueChange={(value) => setSelectedWardNumber(parseInt(value, 10))}
-                  disabled={!selectedPanchayat}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Ward" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {selectedPanchayat &&
-                      getWardsForPanchayat(selectedPanchayat).map((ward) => (
-                        <SelectItem key={ward} value={ward.toString()}>
-                          Ward {ward}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
+            {/* Location from profile - read only display */}
+            <div className="rounded-lg bg-muted p-3 flex items-center gap-3">
+              <MapPin className="h-5 w-5 text-primary shrink-0" />
+              <div>
+                <p className="font-medium">Ward {selectedWardNumber}, {selectedPanchayat?.name}</p>
+                <p className="text-xs text-muted-foreground">From your registered profile</p>
               </div>
             </div>
 
@@ -212,7 +185,7 @@ const Checkout: React.FC = () => {
               <Label htmlFor="address">Delivery Address *</Label>
               <Textarea
                 id="address"
-                placeholder="Enter your complete delivery address"
+                placeholder="Enter your complete delivery address (House name, street, landmark...)"
                 value={deliveryAddress}
                 onChange={(e) => setDeliveryAddress(e.target.value)}
                 rows={3}
