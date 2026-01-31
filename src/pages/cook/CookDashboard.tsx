@@ -348,14 +348,14 @@ const CookDashboard: React.FC = () => {
                       <div className="flex items-center justify-between pt-2 border-t">
                         <span className="font-semibold">Order Total: ₹{order.total_amount}</span>
 
-                        {/* Action Buttons */}
+                        {/* Action Buttons - Accept/Processing/Complete flow */}
                         <div className="flex gap-2">
                           {order.cook_status === 'pending' && (
                             <>
                               <Button
                                 size="sm"
-                                variant="destructive"
-                                onClick={() => handleStatusUpdate(order.id, 'ready')}
+                                variant="outline"
+                                onClick={() => handleStatusUpdate(order.id, 'cooked')}
                               >
                                 <XCircle className="h-4 w-4 mr-1" />
                                 Reject
@@ -369,13 +369,29 @@ const CookDashboard: React.FC = () => {
                               </Button>
                             </>
                           )}
-                          {nextStatus && order.cook_status !== 'pending' && (
+                          {order.cook_status === 'accepted' && (
                             <Button
                               size="sm"
-                              onClick={() => handleStatusUpdate(order.id, nextStatus)}
+                              onClick={() => handleStatusUpdate(order.id, 'preparing')}
                             >
-                              Mark as {statusConfig[nextStatus].label}
+                              <Flame className="h-4 w-4 mr-1" />
+                              Start Processing
                             </Button>
+                          )}
+                          {order.cook_status === 'preparing' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleStatusUpdate(order.id, 'cooked')}
+                            >
+                              <UtensilsCrossed className="h-4 w-4 mr-1" />
+                              Complete
+                            </Button>
+                          )}
+                          {order.cook_status === 'cooked' && (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Cooked - Waiting for Pickup
+                            </Badge>
                           )}
                         </div>
                       </div>

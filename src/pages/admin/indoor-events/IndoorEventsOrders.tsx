@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2, RotateCcw } from 'lucide-react';
+import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2, RotateCcw, Truck, Package, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,7 @@ const statusColors: Record<OrderStatus, string> = {
 };
 
 const IndoorEventsOrders: React.FC = () => {
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [selectedOrder, setSelectedOrder] = useState<IndoorEventOrder | null>(null);
@@ -184,8 +186,86 @@ const IndoorEventsOrders: React.FC = () => {
     if (!error) {
       refetch();
       setSelectedOrder(null);
+      toast({
+        title: 'Status Updated',
+        description: `Order status changed to ${newStatus.replace('_', ' ')}`,
+      });
     }
   };
+
+  // Mark order as delivered and create settlements for cooks
+  const markDeliveredMutation = useMutation({
+    mutationFn: async (order: IndoorEventOrder) => {
+      // Update order status
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ 
+          status: 'delivered',
+          delivered_at: new Date().toISOString(),
+        })
+        .eq('id', order.id);
+
+      if (orderError) throw orderError;
+
+      // Get assigned cooks and their order items totals
+      const cookTotals = new Map<string, number>();
+      order.order_items?.forEach(item => {
+        if (item.assigned_cook_id) {
+          const current = cookTotals.get(item.assigned_cook_id) || 0;
+          cookTotals.set(item.assigned_cook_id, current + item.total_price);
+        }
+      });
+
+      // Get cook user_ids
+      const cookIds = [...cookTotals.keys()];
+      if (cookIds.length === 0) return;
+
+      const { data: cooks } = await supabase
+        .from('cooks')
+        .select('id, user_id')
+        .in('id', cookIds);
+
+      // Create settlements for each cook
+      const settlements = cooks?.filter(c => c.user_id).map(cook => ({
+        user_id: cook.user_id!,
+        order_id: order.id,
+        amount: cookTotals.get(cook.id) || 0,
+        status: 'pending',
+        panchayat_id: order.panchayat_id,
+        ward_number: order.ward_number,
+      })) || [];
+
+      if (settlements.length > 0) {
+        const { error: settleError } = await supabase
+          .from('settlements')
+          .insert(settlements);
+
+        if (settleError) throw settleError;
+      }
+
+      // Update cook assignment status to ready
+      await supabase
+        .from('order_assigned_cooks')
+        .update({ cook_status: 'ready' })
+        .eq('order_id', order.id);
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Order Delivered',
+        description: 'Settlements created for cooks',
+      });
+      refetch();
+      setSelectedOrder(null);
+      queryClient.invalidateQueries({ queryKey: ['cook-settlements-admin'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to complete delivery',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const openCookSelection = (order: IndoorEventOrder) => {
     setSelectedOrder(order);
@@ -322,6 +402,8 @@ const IndoorEventsOrders: React.FC = () => {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
             <SelectItem value="preparing">Preparing</SelectItem>
+            <SelectItem value="ready">Ready</SelectItem>
+            <SelectItem value="out_for_delivery">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
@@ -355,9 +437,27 @@ const IndoorEventsOrders: React.FC = () => {
                         {order.status}
                       </Badge>
                       {order.assigned_cooks && order.assigned_cooks.length > 0 && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge 
+                          variant="secondary" 
+                          className={`text-xs ${
+                            order.assigned_cooks.every(ac => ac.cook_status === 'ready' || ac.cook_status === 'cooked') 
+                              ? 'bg-green-100 text-green-700' 
+                              : order.assigned_cooks.some(ac => ac.cook_status === 'preparing')
+                              ? 'bg-orange-100 text-orange-700'
+                              : order.assigned_cooks.some(ac => ac.cook_status === 'accepted')
+                              ? 'bg-blue-100 text-blue-700'
+                              : ''
+                          }`}
+                        >
                           <ChefHat className="h-3 w-3 mr-1" />
-                          {order.assigned_cooks.length} cook(s)
+                          {order.assigned_cooks.every(ac => ac.cook_status === 'ready' || ac.cook_status === 'cooked') 
+                            ? 'Cooked' 
+                            : order.assigned_cooks.some(ac => ac.cook_status === 'preparing')
+                            ? 'Cooking'
+                            : order.assigned_cooks.some(ac => ac.cook_status === 'accepted')
+                            ? 'Accepted'
+                            : `${order.assigned_cooks.length} cook(s)`
+                          }
                         </Badge>
                       )}
                     </div>
@@ -510,10 +610,11 @@ const IndoorEventsOrders: React.FC = () => {
                   </CardContent>
                 </Card>
 
-                {/* Status Actions */}
+                {/* Status Actions - Complete workflow */}
                 <div className="flex flex-wrap gap-2">
                   {selectedOrder.status === 'pending' && (
                     <Button size="sm" onClick={() => handleUpdateStatus(selectedOrder.id, 'confirmed')}>
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
                       Confirm Order
                     </Button>
                   )}
@@ -524,7 +625,31 @@ const IndoorEventsOrders: React.FC = () => {
                     </Button>
                   )}
                   {selectedOrder.status === 'preparing' && (
-                    <Button size="sm" onClick={() => handleUpdateStatus(selectedOrder.id, 'delivered')}>
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => openCookSelection(selectedOrder)}>
+                        <ChefHat className="h-4 w-4 mr-1" />
+                        Re-assign Cooks
+                      </Button>
+                      <Button size="sm" onClick={() => handleUpdateStatus(selectedOrder.id, 'ready')}>
+                        <Package className="h-4 w-4 mr-1" />
+                        Mark Ready
+                      </Button>
+                    </>
+                  )}
+                  {selectedOrder.status === 'ready' && (
+                    <Button size="sm" onClick={() => handleUpdateStatus(selectedOrder.id, 'out_for_delivery')}>
+                      <Truck className="h-4 w-4 mr-1" />
+                      Shipped (Out for Delivery)
+                    </Button>
+                  )}
+                  {selectedOrder.status === 'out_for_delivery' && (
+                    <Button 
+                      size="sm" 
+                      onClick={() => markDeliveredMutation.mutate(selectedOrder)}
+                      disabled={markDeliveredMutation.isPending}
+                    >
+                      {markDeliveredMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
                       Mark Delivered
                     </Button>
                   )}
@@ -538,6 +663,12 @@ const IndoorEventsOrders: React.FC = () => {
                       <RotateCcw className="h-4 w-4 mr-1" />
                       Restore Order
                     </Button>
+                  )}
+                  {selectedOrder.status === 'delivered' && (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300">
+                      <CheckCircle2 className="h-4 w-4 mr-1" />
+                      Order Completed
+                    </Badge>
                   )}
                 </div>
               </div>

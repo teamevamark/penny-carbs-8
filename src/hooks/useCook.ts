@@ -60,7 +60,7 @@ export function useCookOrders() {
     queryFn: async () => {
       if (!profile?.id) return [];
 
-      // Fetch assignments from order_assigned_cooks
+      // Fetch assignments from order_assigned_cooks (include cooked status for visibility until shipped)
       const { data: assignments, error: assignError } = await supabase
         .from('order_assigned_cooks')
         .select('order_id, cook_status')

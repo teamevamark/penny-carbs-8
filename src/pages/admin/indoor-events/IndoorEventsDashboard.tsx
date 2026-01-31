@@ -10,6 +10,7 @@ import {
   Car,
   BarChart3,
   Percent,
+  Wallet,
 } from 'lucide-react';
 
 export type IndoorEventsStats = {
@@ -60,6 +61,12 @@ const IndoorEventsDashboard: React.FC<Props> = ({ stats }) => {
       label: 'Commission Tracking',
       path: '/admin/indoor-events/commissions',
       description: 'Agent & referral commissions',
+    },
+    {
+      icon: Wallet,
+      label: 'Accounts & Payouts',
+      path: '/admin/indoor-events/accounts',
+      description: 'Cook settlements & payouts',
     },
     {
       icon: BarChart3,

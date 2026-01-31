@@ -13,6 +13,7 @@ import IndoorEventsCooks from './IndoorEventsCooks';
 import IndoorEventsVehicles from './IndoorEventsVehicles';
 import IndoorEventsCommissions from './IndoorEventsCommissions';
 import IndoorEventsReports from './IndoorEventsReports';
+import IndoorEventsAccounts from './IndoorEventsAccounts';
 
 const IndoorEventsModule: React.FC = () => {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ const IndoorEventsModule: React.FC = () => {
       <Route path="vehicles" element={<IndoorEventsVehicles />} />
       <Route path="commissions" element={<IndoorEventsCommissions />} />
       <Route path="reports" element={<IndoorEventsReports />} />
+      <Route path="accounts" element={<IndoorEventsAccounts />} />
     </Routes>
   );
 };
