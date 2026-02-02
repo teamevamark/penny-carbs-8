@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
+import CustomerLoginDialog from '@/components/customer/CustomerLoginDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +28,7 @@ const FeaturedItems: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { selectedPanchayat } = useLocation();
+  const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
 
   const { data: items, isLoading } = useQuery({
     queryKey: ['featured-items', selectedPanchayat?.id],
@@ -63,17 +66,17 @@ const FeaturedItems: React.FC = () => {
   const handleAddToCart = async (e: React.MouseEvent, item: FeaturedItem) => {
     e.stopPropagation();
     if (item.service_type === 'indoor_events') {
-      navigate('/indoor-events');
+      requireAuth(() => navigate('/indoor-events'));
     } else {
-      await addToCart(item.id);
+      requireAuth(() => addToCart(item.id));
     }
   };
 
   const handleItemClick = (item: FeaturedItem) => {
     if (item.service_type === 'indoor_events') {
-      navigate('/indoor-events');
+      requireAuth(() => navigate('/indoor-events'));
     } else {
-      navigate(`/item/${item.id}`);
+      requireAuth(() => navigate(`/item/${item.id}`));
     }
   };
 
@@ -191,6 +194,12 @@ const FeaturedItems: React.FC = () => {
           );
         })}
       </div>
+
+      <CustomerLoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        onLoginSuccess={onLoginSuccess}
+      />
     </section>
   );
 };
