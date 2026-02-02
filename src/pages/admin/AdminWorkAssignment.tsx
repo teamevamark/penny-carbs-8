@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,9 +23,32 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, ChefHat, Truck, ClipboardList, Loader2 } from 'lucide-react';
+import { ArrowLeft, ChefHat, Truck, ClipboardList, Loader2, AlertTriangle } from 'lucide-react';
 import AdminNavbar from '@/components/admin/AdminNavbar';
 import { format } from 'date-fns';
+
+interface OrderWithItems {
+  id: string;
+  order_number: string;
+  service_type: string;
+  status: string;
+  total_amount: number;
+  panchayat_id: string;
+  ward_number: number;
+  assigned_cook_id: string | null;
+  assigned_delivery_id: string | null;
+  created_at: string;
+  panchayats?: { name: string };
+  order_items?: { food_item_id: string }[];
+}
+
+interface CookWithDishes {
+  id: string;
+  kitchen_name: string;
+  mobile_number: string;
+  panchayat_id: string | null;
+  allocated_dishes: Set<string>;
+}
 
 const AdminWorkAssignment: React.FC = () => {
   const navigate = useNavigate();
@@ -33,15 +56,17 @@ const AdminWorkAssignment: React.FC = () => {
   const [activeTab, setActiveTab] = useState('pending');
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
 
-  // Fetch pending orders (not yet assigned)
+  // Fetch pending orders (not yet assigned) - include order_items for dish filtering
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ['admin-orders-assignment', activeTab],
     queryFn: async () => {
       let query = supabase
         .from('orders')
         .select(`
-          *,
-          panchayats(name)
+          id, order_number, service_type, status, total_amount, panchayat_id, ward_number,
+          assigned_cook_id, assigned_delivery_id, created_at,
+          panchayats(name),
+          order_items(food_item_id)
         `)
         .order('created_at', { ascending: false });
 
@@ -55,21 +80,46 @@ const AdminWorkAssignment: React.FC = () => {
 
       const { data, error } = await query.limit(50);
       if (error) throw error;
-      return data;
+      return data as unknown as OrderWithItems[];
     },
   });
 
-  // Fetch available cooks
-  const { data: cooks } = useQuery({
-    queryKey: ['available-cooks'],
+  // Fetch available cooks with their allocated dishes
+  const { data: cooksWithDishes } = useQuery({
+    queryKey: ['available-cooks-with-dishes'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Get cooks
+      const { data: cooksData, error: cooksError } = await supabase
         .from('cooks')
         .select('id, kitchen_name, mobile_number, panchayat_id')
         .eq('is_active', true)
         .eq('is_available', true);
-      if (error) throw error;
-      return data;
+      if (cooksError) throw cooksError;
+
+      // Get all dish allocations
+      const cookIds = cooksData?.map(c => c.id) || [];
+      if (cookIds.length === 0) return [];
+
+      const { data: allocations, error: allocError } = await supabase
+        .from('cook_dishes')
+        .select('cook_id, food_item_id')
+        .in('cook_id', cookIds);
+
+      if (allocError) throw allocError;
+
+      // Build dish map
+      const dishMap = new Map<string, Set<string>>();
+      allocations?.forEach(a => {
+        if (!dishMap.has(a.cook_id)) {
+          dishMap.set(a.cook_id, new Set());
+        }
+        dishMap.get(a.cook_id)!.add(a.food_item_id);
+      });
+
+      return cooksData?.map(cook => ({
+        ...cook,
+        allocated_dishes: dishMap.get(cook.id) || new Set(),
+      })) as CookWithDishes[];
     },
   });
 
@@ -88,6 +138,23 @@ const AdminWorkAssignment: React.FC = () => {
     },
   });
 
+  // Get qualified cooks for a specific order
+  const getQualifiedCooks = (order: OrderWithItems) => {
+    if (!cooksWithDishes) return [];
+
+    const requiredDishIds = order.order_items?.map(item => item.food_item_id) || [];
+    
+    // If no items in order, show all available cooks
+    if (requiredDishIds.length === 0) {
+      return cooksWithDishes;
+    }
+
+    // Filter cooks who have ALL required dishes allocated
+    return cooksWithDishes.filter(cook => {
+      return requiredDishIds.every(dishId => cook.allocated_dishes.has(dishId));
+    });
+  };
+
   const assignCook = async (orderId: string, cookId: string) => {
     setAssigningOrderId(orderId);
     try {
@@ -101,6 +168,15 @@ const AdminWorkAssignment: React.FC = () => {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Also create an entry in order_assigned_cooks
+      await supabase
+        .from('order_assigned_cooks')
+        .insert({
+          order_id: orderId,
+          cook_id: cookId,
+          cook_status: 'pending',
+        });
 
       toast({ title: 'Cook Assigned', description: 'Order assigned to cook successfully' });
       queryClient.invalidateQueries({ queryKey: ['admin-orders-assignment'] });
@@ -208,73 +284,90 @@ const AdminWorkAssignment: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {orders.map((order) => (
-                          <TableRow key={order.id}>
-                            <TableCell className="font-medium">
-                              {order.order_number}
-                              <div className="text-xs text-muted-foreground">
-                                {format(new Date(order.created_at), 'dd MMM, HH:mm')}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{order.service_type.replace('_', ' ')}</Badge>
-                            </TableCell>
-                            <TableCell>₹{order.total_amount}</TableCell>
-                            <TableCell>
-                              {order.panchayats?.name || '-'}
-                              <div className="text-xs text-muted-foreground">Ward {order.ward_number}</div>
-                            </TableCell>
-                            <TableCell>{getStatusBadge(order.status)}</TableCell>
-                            <TableCell>
-                              {order.assigned_cook_id ? (
-                                <Badge variant="default" className="gap-1">
-                                  <ChefHat className="h-3 w-3" />
-                                  Assigned
-                                </Badge>
-                              ) : (
-                                <Select
-                                  onValueChange={(cookId) => assignCook(order.id, cookId)}
-                                  disabled={assigningOrderId === order.id}
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder="Select cook" />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-popover">
-                                    {cooks?.map((cook) => (
-                                      <SelectItem key={cook.id} value={cook.id}>
-                                        {cook.kitchen_name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {order.assigned_delivery_id ? (
-                                <Badge variant="default" className="gap-1">
-                                  <Truck className="h-3 w-3" />
-                                  Assigned
-                                </Badge>
-                              ) : (
-                                <Select
-                                  onValueChange={(deliveryId) => assignDelivery(order.id, deliveryId)}
-                                  disabled={assigningOrderId === order.id || !order.assigned_cook_id}
-                                >
-                                  <SelectTrigger className="w-40">
-                                    <SelectValue placeholder={order.assigned_cook_id ? "Select delivery" : "Assign cook first"} />
-                                  </SelectTrigger>
-                                  <SelectContent className="bg-popover">
-                                    {deliveryStaff?.map((staff) => (
-                                      <SelectItem key={staff.id} value={staff.id}>
-                                        {staff.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {orders.map((order) => {
+                          const qualifiedCooks = getQualifiedCooks(order);
+                          const hasNoCooks = qualifiedCooks.length === 0 && (order.order_items?.length || 0) > 0;
+
+                          return (
+                            <TableRow key={order.id} className={hasNoCooks ? 'bg-orange-50' : ''}>
+                              <TableCell className="font-medium">
+                                {order.order_number}
+                                <div className="text-xs text-muted-foreground">
+                                  {format(new Date(order.created_at), 'dd MMM, HH:mm')}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{order.service_type.replace('_', ' ')}</Badge>
+                              </TableCell>
+                              <TableCell>₹{order.total_amount}</TableCell>
+                              <TableCell>
+                                {order.panchayats?.name || '-'}
+                                <div className="text-xs text-muted-foreground">Ward {order.ward_number}</div>
+                              </TableCell>
+                              <TableCell>{getStatusBadge(order.status)}</TableCell>
+                              <TableCell>
+                                {order.assigned_cook_id ? (
+                                  <Badge variant="default" className="gap-1">
+                                    <ChefHat className="h-3 w-3" />
+                                    Assigned
+                                  </Badge>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {hasNoCooks && (
+                                      <div className="flex items-center gap-1 text-xs text-orange-600">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        No qualified cooks
+                                      </div>
+                                    )}
+                                    <Select
+                                      onValueChange={(cookId) => assignCook(order.id, cookId)}
+                                      disabled={assigningOrderId === order.id}
+                                    >
+                                      <SelectTrigger className="w-40">
+                                        <SelectValue placeholder={hasNoCooks ? "No cooks" : "Select cook"} />
+                                      </SelectTrigger>
+                                      <SelectContent className="bg-popover">
+                                        {qualifiedCooks.length === 0 ? (
+                                          <div className="p-2 text-sm text-muted-foreground">No cooks available</div>
+                                        ) : (
+                                          qualifiedCooks.map((cook) => (
+                                            <SelectItem key={cook.id} value={cook.id}>
+                                              {cook.kitchen_name}
+                                            </SelectItem>
+                                          ))
+                                        )}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {order.assigned_delivery_id ? (
+                                  <Badge variant="default" className="gap-1">
+                                    <Truck className="h-3 w-3" />
+                                    Assigned
+                                  </Badge>
+                                ) : (
+                                  <Select
+                                    onValueChange={(deliveryId) => assignDelivery(order.id, deliveryId)}
+                                    disabled={assigningOrderId === order.id || !order.assigned_cook_id}
+                                  >
+                                    <SelectTrigger className="w-40">
+                                      <SelectValue placeholder={order.assigned_cook_id ? "Select delivery" : "Assign cook first"} />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-popover">
+                                      {deliveryStaff?.map((staff) => (
+                                        <SelectItem key={staff.id} value={staff.id}>
+                                          {staff.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>

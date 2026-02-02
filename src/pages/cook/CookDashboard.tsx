@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { CookStatus } from '@/types/cook';
+import DishRequestForm from '@/components/cook/DishRequestForm';
 
 const statusConfig: Record<CookStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'New Order', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -245,18 +246,22 @@ const CookDashboard: React.FC = () => {
 
         {/* Orders Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="active" className="gap-1">
               <Clock className="h-4 w-4" />
-              Active
+              <span className="hidden sm:inline">Active</span>
+            </TabsTrigger>
+            <TabsTrigger value="dishes" className="gap-1">
+              <UtensilsCrossed className="h-4 w-4" />
+              <span className="hidden sm:inline">Dishes</span>
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-1">
               <History className="h-4 w-4" />
-              History
+              <span className="hidden sm:inline">History</span>
             </TabsTrigger>
             <TabsTrigger value="wallet" className="gap-1">
               <Wallet className="h-4 w-4" />
-              Wallet
+              <span className="hidden sm:inline">Wallet</span>
             </TabsTrigger>
           </TabsList>
 
@@ -389,6 +394,11 @@ const CookDashboard: React.FC = () => {
                 <p className="text-muted-foreground">No active orders</p>
               </Card>
             )}
+          </TabsContent>
+
+          {/* My Dishes Tab */}
+          <TabsContent value="dishes" className="space-y-4 mt-4">
+            <DishRequestForm />
           </TabsContent>
 
           {/* Order History Tab */}

@@ -172,6 +172,137 @@ export type Database = {
         }
         Relationships: []
       }
+      cook_dish_requests: {
+        Row: {
+          admin_notes: string | null
+          cook_id: string
+          created_at: string
+          created_food_item_id: string | null
+          dish_category_id: string | null
+          dish_description: string | null
+          dish_is_vegetarian: boolean | null
+          dish_name: string | null
+          dish_preparation_time_minutes: number | null
+          dish_price: number | null
+          food_item_id: string | null
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          cook_id: string
+          created_at?: string
+          created_food_item_id?: string | null
+          dish_category_id?: string | null
+          dish_description?: string | null
+          dish_is_vegetarian?: boolean | null
+          dish_name?: string | null
+          dish_preparation_time_minutes?: number | null
+          dish_price?: number | null
+          food_item_id?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          cook_id?: string
+          created_at?: string
+          created_food_item_id?: string | null
+          dish_category_id?: string | null
+          dish_description?: string | null
+          dish_is_vegetarian?: boolean | null
+          dish_name?: string | null
+          dish_preparation_time_minutes?: number | null
+          dish_price?: number | null
+          food_item_id?: string | null
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cook_dish_requests_cook_id_fkey"
+            columns: ["cook_id"]
+            isOneToOne: false
+            referencedRelation: "cooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cook_dish_requests_created_food_item_id_fkey"
+            columns: ["created_food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cook_dish_requests_dish_category_id_fkey"
+            columns: ["dish_category_id"]
+            isOneToOne: false
+            referencedRelation: "food_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cook_dish_requests_food_item_id_fkey"
+            columns: ["food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cook_dishes: {
+        Row: {
+          allocated_at: string
+          allocated_by: string | null
+          cook_id: string
+          created_at: string
+          food_item_id: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          allocated_at?: string
+          allocated_by?: string | null
+          cook_id: string
+          created_at?: string
+          food_item_id: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          allocated_at?: string
+          allocated_by?: string | null
+          cook_id?: string
+          created_at?: string
+          food_item_id?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cook_dishes_cook_id_fkey"
+            columns: ["cook_id"]
+            isOneToOne: false
+            referencedRelation: "cooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cook_dishes_food_item_id_fkey"
+            columns: ["food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cooks: {
         Row: {
           allowed_order_types: string[]

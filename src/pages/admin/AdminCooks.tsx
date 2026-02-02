@@ -18,9 +18,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, ChefHat, Phone, MapPin, Loader2, Calendar, Users, Search, User, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, ChefHat, Phone, MapPin, Loader2, Calendar, Users, Search, User, CheckCircle, UtensilsCrossed, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Cook } from '@/types/cook';
+import CookDishesTab from '@/components/admin/CookDishesTab';
+import DishRequestsTab from '@/components/admin/DishRequestsTab';
 
 interface StaffProfile {
   id: string;
@@ -631,16 +633,24 @@ const AdminCooks: React.FC = () => {
 
       <main className="container px-4 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full mb-4">
-            <TabsTrigger value="cooks" className="flex-1">
+          <TabsList className="w-full mb-4 grid grid-cols-5">
+            <TabsTrigger value="cooks">
               <ChefHat className="h-4 w-4 mr-1" />
-              Cooks ({cooks?.length || 0})
+              <span className="hidden sm:inline">Cooks</span>
             </TabsTrigger>
-            <TabsTrigger value="pending" className="flex-1">
-              Pending ({pendingAssignments?.length || 0})
+            <TabsTrigger value="dishes">
+              <UtensilsCrossed className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Dishes</span>
             </TabsTrigger>
-            <TabsTrigger value="finished" className="flex-1">
-              Finished ({finishedAssignments?.length || 0})
+            <TabsTrigger value="requests">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Requests</span>
+            </TabsTrigger>
+            <TabsTrigger value="pending">
+              Pending
+            </TabsTrigger>
+            <TabsTrigger value="finished">
+              Finished
             </TabsTrigger>
           </TabsList>
 
@@ -712,6 +722,17 @@ const AdminCooks: React.FC = () => {
                 <p className="text-muted-foreground">No cooks registered yet</p>
               </Card>
             )}
+          </TabsContent>
+
+
+          {/* Dishes Tab */}
+          <TabsContent value="dishes">
+            <CookDishesTab cooks={cooks} cooksLoading={cooksLoading} />
+          </TabsContent>
+
+          {/* Requests Tab */}
+          <TabsContent value="requests">
+            <DishRequestsTab />
           </TabsContent>
 
           {/* Pending Orders Tab */}
