@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
+import CustomerLoginDialog from '@/components/customer/CustomerLoginDialog';
 import type { FoodItemWithImages, ServiceType, FoodCategory } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,6 +25,7 @@ const Menu: React.FC = () => {
   const { serviceType } = useParams<{ serviceType: string }>();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
   
   const [items, setItems] = useState<FoodItemWithImages[]>([]);
   const [categories, setCategories] = useState<FoodCategory[]>([]);
@@ -76,11 +79,11 @@ const Menu: React.FC = () => {
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
-    await addToCart(item.id);
+    requireAuth(() => addToCart(item.id));
   };
 
   const handleItemClick = (itemId: string) => {
-    navigate(`/item/${itemId}`);
+    requireAuth(() => navigate(`/item/${itemId}`));
   };
 
   // Filter and sort items
@@ -240,6 +243,12 @@ const Menu: React.FC = () => {
 
       <CartButton />
       <BottomNav />
+      
+      <CustomerLoginDialog
+        open={showLoginDialog}
+        onOpenChange={setShowLoginDialog}
+        onLoginSuccess={onLoginSuccess}
+      />
     </div>
   );
 };
