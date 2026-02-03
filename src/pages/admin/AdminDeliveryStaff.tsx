@@ -61,7 +61,8 @@ const AdminDeliveryStaff: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<DeliveryStaff | null>(null);
   const [editPanchayats, setEditPanchayats] = useState<string[]>([]);
-  const [editWards, setEditWards] = useState<number[]>([]);
+  // Wards per panchayat: { panchayatId: [ward1, ward2, ...] }
+  const [editWardsByPanchayat, setEditWardsByPanchayat] = useState<Record<string, number[]>>({});
   const [editVehicleType, setEditVehicleType] = useState('motorcycle');
   const [editVehicleNumber, setEditVehicleNumber] = useState('');
   const [editStaffType, setEditStaffType] = useState<'fixed_salary' | 'registered_partner'>('registered_partner');
@@ -96,37 +97,74 @@ const AdminDeliveryStaff: React.FC = () => {
 
   // Edit dialog helpers
   const toggleEditPanchayat = (panchayatId: string) => {
-    setEditPanchayats(prev => 
-      prev.includes(panchayatId) 
-        ? prev.filter(id => id !== panchayatId)
-        : [...prev, panchayatId]
-    );
+    setEditPanchayats(prev => {
+      if (prev.includes(panchayatId)) {
+        // Remove panchayat and its wards
+        setEditWardsByPanchayat(current => {
+          const updated = { ...current };
+          delete updated[panchayatId];
+          return updated;
+        });
+        return prev.filter(id => id !== panchayatId);
+      }
+      // Add panchayat with empty wards
+      setEditWardsByPanchayat(current => ({ ...current, [panchayatId]: [] }));
+      return [...prev, panchayatId];
+    });
   };
 
-  const toggleEditWard = (ward: number) => {
-    setEditWards(prev =>
-      prev.includes(ward)
-        ? prev.filter(w => w !== ward)
-        : [...prev, ward]
-    );
+  const toggleEditWard = (panchayatId: string, ward: number) => {
+    setEditWardsByPanchayat(prev => {
+      const currentWards = prev[panchayatId] || [];
+      const updatedWards = currentWards.includes(ward)
+        ? currentWards.filter(w => w !== ward)
+        : [...currentWards, ward];
+      return { ...prev, [panchayatId]: updatedWards };
+    });
   };
 
-  const editMaxWardCount = panchayats
-    ?.filter(p => editPanchayats.includes(p.id))
-    .reduce((max, p) => Math.max(max, p.ward_count || 25), 0) || 25;
-
-  const selectAllEditWards = () => {
-    setEditWards(Array.from({ length: editMaxWardCount }, (_, i) => i + 1));
+  const selectAllWardsForPanchayat = (panchayatId: string) => {
+    const panchayat = panchayats?.find(p => p.id === panchayatId);
+    if (panchayat) {
+      const allWards = Array.from({ length: panchayat.ward_count || 25 }, (_, i) => i + 1);
+      setEditWardsByPanchayat(prev => ({ ...prev, [panchayatId]: allWards }));
+    }
   };
 
-  const clearAllEditWards = () => {
-    setEditWards([]);
+  const clearWardsForPanchayat = (panchayatId: string) => {
+    setEditWardsByPanchayat(prev => ({ ...prev, [panchayatId]: [] }));
+  };
+
+  // Get flat array of all selected wards for saving
+  const getAllSelectedWards = (): number[] => {
+    const allWards = new Set<number>();
+    Object.values(editWardsByPanchayat).forEach(wards => {
+      wards.forEach(w => allWards.add(w));
+    });
+    return Array.from(allWards).sort((a, b) => a - b);
   };
 
   const openEditDialog = (staff: DeliveryStaff) => {
     setEditingStaff(staff);
-    setEditPanchayats(staff.assigned_panchayat_ids || []);
-    setEditWards(staff.assigned_wards || []);
+    const assignedPanchayatIds = staff.assigned_panchayat_ids || [];
+    setEditPanchayats(assignedPanchayatIds);
+    
+    // Initialize wards by panchayat - distribute existing wards across selected panchayats
+    const wardsByPanchayat: Record<string, number[]> = {};
+    const existingWards = staff.assigned_wards || [];
+    
+    assignedPanchayatIds.forEach(panchayatId => {
+      const panchayat = panchayats?.find(p => p.id === panchayatId);
+      if (panchayat) {
+        // Filter wards that are valid for this panchayat
+        const validWards = existingWards.filter(w => w <= (panchayat.ward_count || 25));
+        wardsByPanchayat[panchayatId] = validWards;
+      } else {
+        wardsByPanchayat[panchayatId] = [];
+      }
+    });
+    
+    setEditWardsByPanchayat(wardsByPanchayat);
     setEditVehicleType(staff.vehicle_type);
     setEditVehicleNumber(staff.vehicle_number || '');
     setEditStaffType(staff.staff_type);
@@ -231,7 +269,7 @@ const AdminDeliveryStaff: React.FC = () => {
           staff_type: editStaffType,
           panchayat_id: editPanchayats[0] || null,
           assigned_panchayat_ids: editPanchayats,
-          assigned_wards: editWards,
+          assigned_wards: getAllSelectedWards(),
         })
         .eq('id', editingStaff.id);
       
@@ -783,40 +821,60 @@ const AdminDeliveryStaff: React.FC = () => {
               </div>
 
               {editPanchayats.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Wards (Select multiple)</Label>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" size="sm" onClick={selectAllEditWards}>
-                        Select All
-                      </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={clearAllEditWards}>
-                        Clear
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="max-h-32 overflow-y-auto border rounded-md p-2">
-                    <div className="grid grid-cols-5 gap-1">
-                      {Array.from({ length: editMaxWardCount }, (_, i) => i + 1).map(ward => (
-                        <div
-                          key={ward}
-                          className={`flex items-center justify-center p-2 rounded cursor-pointer text-sm border transition-colors ${
-                            editWards.includes(ward) 
-                              ? 'bg-primary text-primary-foreground border-primary' 
-                              : 'hover:bg-muted border-border'
-                          }`}
-                          onClick={() => toggleEditWard(ward)}
-                        >
-                          {ward}
+                <div className="space-y-4">
+                  <Label>Ward Selection by Panchayat</Label>
+                  {editPanchayats.map(panchayatId => {
+                    const panchayat = panchayats?.find(p => p.id === panchayatId);
+                    if (!panchayat) return null;
+                    const wardCount = panchayat.ward_count || 25;
+                    const selectedWards = editWardsByPanchayat[panchayatId] || [];
+                    
+                    return (
+                      <div key={panchayatId} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{panchayat.name}</span>
+                          <div className="flex gap-2">
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => selectAllWardsForPanchayat(panchayatId)}
+                            >
+                              All
+                            </Button>
+                            <Button 
+                              type="button" 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => clearWardsForPanchayat(panchayatId)}
+                            >
+                              Clear
+                            </Button>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                  {editWards.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      {editWards.length} ward(s) selected
-                    </p>
-                  )}
+                        <div className="max-h-28 overflow-y-auto">
+                          <div className="grid grid-cols-6 gap-1">
+                            {Array.from({ length: wardCount }, (_, i) => i + 1).map(ward => (
+                              <div
+                                key={ward}
+                                className={`flex items-center justify-center p-1.5 rounded cursor-pointer text-xs border transition-colors ${
+                                  selectedWards.includes(ward) 
+                                    ? 'bg-primary text-primary-foreground border-primary' 
+                                    : 'hover:bg-muted border-border'
+                                }`}
+                                onClick={() => toggleEditWard(panchayatId, ward)}
+                              >
+                                {ward}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedWards.length} ward(s) selected
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
