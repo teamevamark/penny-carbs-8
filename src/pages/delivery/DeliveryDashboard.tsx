@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import NewOrderAlert from '@/components/delivery/NewOrderAlert';
+import OrderTakenToast from '@/components/delivery/OrderTakenToast';
 import { 
   Truck, 
   LogOut, 
@@ -57,6 +58,8 @@ const DeliveryDashboard: React.FC = () => {
     showAlert, 
     dismissAlert, 
     removeOrder,
+    ordersTaken,
+    clearOrderTaken,
     ORDER_ACCEPT_CUTOFF_SECONDS 
   } = useDeliveryNotifications();
 
@@ -163,6 +166,12 @@ const DeliveryDashboard: React.FC = () => {
         onDismiss={dismissAlert}
         isAccepting={acceptDelivery.isPending}
         cutoffSeconds={ORDER_ACCEPT_CUTOFF_SECONDS}
+      />
+
+      {/* Order Taken Toast Notifications */}
+      <OrderTakenToast
+        ordersTaken={ordersTaken}
+        onDismiss={clearOrderTaken}
       />
 
       {/* Header */}
