@@ -265,7 +265,7 @@ export function useAvailableDeliveryOrders() {
 
 export function useUpdateDeliveryStatus() {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { data: profile } = useDeliveryProfile();
 
   return useMutation({
     mutationFn: async ({ orderId, status, orderAmount, deliveryCharge }: { 
@@ -289,58 +289,49 @@ export function useUpdateDeliveryStatus() {
       if (error) throw error;
 
       // Update wallet when order is delivered
-      if (status === 'delivered' && user?.id) {
-        // Get delivery staff id
-        const { data: staffData } = await supabase
-          .from('delivery_staff')
-          .select('id')
-          .eq('user_id', user.id)
+      if (status === 'delivered' && profile?.id) {
+        // Get current wallet
+        const { data: wallet } = await supabase
+          .from('delivery_wallets')
+          .select('*')
+          .eq('delivery_staff_id', profile.id)
           .maybeSingle();
 
-        if (staffData) {
-          // Get current wallet
-          const { data: wallet } = await supabase
+        if (wallet) {
+          // Update wallet: collected_amount = order total, job_earnings = delivery charge
+          const newCollectedAmount = (wallet.collected_amount || 0) + (orderAmount || 0);
+          const newJobEarnings = (wallet.job_earnings || 0) + (deliveryCharge || 0);
+
+          await supabase
             .from('delivery_wallets')
-            .select('*')
-            .eq('delivery_staff_id', staffData.id)
-            .maybeSingle();
+            .update({
+              collected_amount: newCollectedAmount,
+              job_earnings: newJobEarnings,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('delivery_staff_id', profile.id);
 
-          if (wallet) {
-            // Update wallet: collected_amount = order total, job_earnings = delivery charge
-            const newCollectedAmount = (wallet.collected_amount || 0) + (orderAmount || 0);
-            const newJobEarnings = (wallet.job_earnings || 0) + (deliveryCharge || 0);
+          // Create wallet transactions for tracking
+          if (orderAmount && orderAmount > 0) {
+            await supabase.from('wallet_transactions').insert({
+              delivery_staff_id: profile.id,
+              order_id: orderId,
+              transaction_type: 'collection',
+              amount: orderAmount,
+              description: 'Order amount collected',
+              status: 'pending',
+            });
+          }
 
-            await supabase
-              .from('delivery_wallets')
-              .update({
-                collected_amount: newCollectedAmount,
-                job_earnings: newJobEarnings,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('delivery_staff_id', staffData.id);
-
-            // Create wallet transactions for tracking
-            if (orderAmount && orderAmount > 0) {
-              await supabase.from('wallet_transactions').insert({
-                delivery_staff_id: staffData.id,
-                order_id: orderId,
-                transaction_type: 'collection',
-                amount: orderAmount,
-                description: 'Order amount collected',
-                status: 'pending',
-              });
-            }
-
-            if (deliveryCharge && deliveryCharge > 0) {
-              await supabase.from('wallet_transactions').insert({
-                delivery_staff_id: staffData.id,
-                order_id: orderId,
-                transaction_type: 'earning',
-                amount: deliveryCharge,
-                description: 'Delivery charge earned',
-                status: 'approved',
-              });
-            }
+          if (deliveryCharge && deliveryCharge > 0) {
+            await supabase.from('wallet_transactions').insert({
+              delivery_staff_id: profile.id,
+              order_id: orderId,
+              transaction_type: 'earning',
+              amount: deliveryCharge,
+              description: 'Delivery charge earned',
+              status: 'approved',
+            });
           }
         }
       }
