@@ -5,6 +5,7 @@ import {
   useDeliveryProfile, 
   useDeliveryWallet, 
   useDeliveryOrders, 
+  useDeliveryOrderHistory,
   useAvailableDeliveryOrders,
   useUpdateDeliveryStatus,
   useAcceptDelivery,
@@ -18,9 +19,12 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from '@/hooks/use-toast';
 import NewOrderAlert from '@/components/delivery/NewOrderAlert';
 import OrderTakenToast from '@/components/delivery/OrderTakenToast';
+import { format } from 'date-fns';
 import { 
   Truck, 
   LogOut, 
@@ -32,7 +36,9 @@ import {
   CheckCircle2,
   Navigation,
   Bell,
-  RefreshCw
+  RefreshCw,
+  CalendarIcon,
+  History
 } from 'lucide-react';
 import type { DeliveryStatus } from '@/types/delivery';
 
@@ -48,9 +54,12 @@ const DeliveryDashboard: React.FC = () => {
   const queryClient = useQueryClient();
   const { signOut } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  
   const { data: profile, isLoading: profileLoading } = useDeliveryProfile();
   const { data: wallet } = useDeliveryWallet();
   const { data: myOrders, isLoading: ordersLoading } = useDeliveryOrders();
+  const { data: orderHistory, isLoading: historyLoading } = useDeliveryOrderHistory(dateRange.from, dateRange.to);
   const { data: availableOrders } = useAvailableDeliveryOrders();
   const updateStatus = useUpdateDeliveryStatus();
   const acceptDelivery = useAcceptDelivery();
@@ -72,12 +81,19 @@ const DeliveryDashboard: React.FC = () => {
     navigate('/');
   };
 
-  const handleStatusUpdate = async (orderId: string, newStatus: DeliveryStatus) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: DeliveryStatus, orderAmount?: number, deliveryCharge?: number) => {
     try {
-      await updateStatus.mutateAsync({ orderId, status: newStatus });
+      await updateStatus.mutateAsync({ 
+        orderId, 
+        status: newStatus,
+        orderAmount,
+        deliveryCharge 
+      });
       toast({
         title: "Status Updated",
-        description: `Delivery status changed to ${statusConfig[newStatus].label}`,
+        description: newStatus === 'delivered' 
+          ? `Delivery completed! ₹${orderAmount || 0} added to Wallet, ₹${deliveryCharge || 0} to Earnings`
+          : `Delivery status changed to ${statusConfig[newStatus].label}`,
       });
     } catch (error) {
       toast({
@@ -91,7 +107,7 @@ const DeliveryDashboard: React.FC = () => {
   const handleAcceptOrder = async (orderId: string) => {
     try {
       await acceptDelivery.mutateAsync(orderId);
-      removeOrder(orderId); // Remove from pending alerts
+      removeOrder(orderId);
       toast({
         title: "Order Accepted",
         description: "You've been assigned to this delivery",
@@ -112,6 +128,7 @@ const DeliveryDashboard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['available-delivery-orders'] }),
       queryClient.invalidateQueries({ queryKey: ['delivery-profile'] }),
       queryClient.invalidateQueries({ queryKey: ['delivery-wallet'] }),
+      queryClient.invalidateQueries({ queryKey: ['delivery-order-history'] }),
     ]);
     setTimeout(() => setIsRefreshing(false), 1000);
   };
@@ -131,6 +148,11 @@ const DeliveryDashboard: React.FC = () => {
       });
     }
   };
+
+  // Get active orders (assigned + picked_up) and delivered from history
+  const activeOrders = myOrders || [];
+  const deliveredOrders = (orderHistory || []).filter(o => o.delivery_status === 'delivered');
+  const pickedUpOrders = (orderHistory || []).filter(o => o.delivery_status === 'picked_up');
 
   if (profileLoading) {
     return (
@@ -240,16 +262,23 @@ const DeliveryDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <Wallet className="h-5 w-5 text-primary" />
-              <span className="font-semibold">Wallet Balance</span>
+              <span className="font-semibold">Wallet Summary</span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Collected Amount</p>
-                <p className="text-xl font-bold">₹{wallet?.collected_amount || 0}</p>
+                <p className="text-xs text-muted-foreground">Wallet Balance</p>
+                <p className="text-xl font-bold text-blue-600">₹{wallet?.collected_amount || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Collected from orders</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Job Earnings</p>
                 <p className="text-xl font-bold text-green-600">₹{wallet?.job_earnings || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Delivery charges</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Settled</p>
+                <p className="text-xl font-bold text-gray-600">₹{wallet?.total_settled || 0}</p>
+                <p className="text-[10px] text-muted-foreground">Cleared amount</p>
               </div>
             </div>
           </CardContent>
@@ -258,7 +287,7 @@ const DeliveryDashboard: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{myOrders?.length || 0}</p>
+            <p className="text-2xl font-bold text-primary">{activeOrders.length}</p>
             <p className="text-xs text-muted-foreground">Active Deliveries</p>
           </Card>
           <Card className="p-4 text-center">
@@ -269,16 +298,20 @@ const DeliveryDashboard: React.FC = () => {
 
         {/* Orders Tabs */}
         <Tabs defaultValue="my-orders" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="my-orders">My Orders</TabsTrigger>
             <TabsTrigger value="available">Available</TabsTrigger>
+            <TabsTrigger value="history">
+              <History className="h-4 w-4 mr-1" />
+              History
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="my-orders" className="space-y-3">
             {ordersLoading ? (
               [...Array(2)].map((_, i) => <Skeleton key={i} className="h-40" />)
-            ) : myOrders && myOrders.length > 0 ? (
-              myOrders.map((order) => {
+            ) : activeOrders.length > 0 ? (
+              activeOrders.map((order) => {
                 const status = statusConfig[order.delivery_status as DeliveryStatus] || statusConfig.pending;
 
                 return (
@@ -288,6 +321,9 @@ const DeliveryDashboard: React.FC = () => {
                         <CardTitle className="text-base">#{order.order_number}</CardTitle>
                         <Badge className={status.color}>{status.label}</Badge>
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(order.created_at), 'dd MMM yyyy, hh:mm a')}
+                      </p>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {/* Customer Info */}
@@ -311,7 +347,12 @@ const DeliveryDashboard: React.FC = () => {
 
                       {/* Amount & Actions */}
                       <div className="flex items-center justify-between pt-2 border-t">
-                        <span className="font-semibold">₹{order.total_amount}</span>
+                        <div>
+                          <span className="font-semibold">₹{order.total_amount}</span>
+                          {order.delivery_amount && order.delivery_amount > 0 && (
+                            <span className="text-xs text-green-600 ml-2">(+₹{order.delivery_amount} delivery)</span>
+                          )}
+                        </div>
                         <div className="flex gap-2">
                           {order.delivery_status === 'assigned' && (
                             <Button
@@ -325,7 +366,12 @@ const DeliveryDashboard: React.FC = () => {
                           {order.delivery_status === 'picked_up' && (
                             <Button
                               size="sm"
-                              onClick={() => handleStatusUpdate(order.id, 'delivered')}
+                              onClick={() => handleStatusUpdate(
+                                order.id, 
+                                'delivered',
+                                order.total_amount,
+                                order.delivery_amount || 0
+                              )}
                             >
                               <CheckCircle2 className="h-4 w-4 mr-1" />
                               Delivered
@@ -374,6 +420,9 @@ const DeliveryDashboard: React.FC = () => {
                       <div>
                         <p className="font-semibold">₹{order.total_amount}</p>
                         <p className="text-xs text-muted-foreground">Ward {order.ward_number}</p>
+                        {order.delivery_amount && order.delivery_amount > 0 && (
+                          <p className="text-xs text-green-600">Delivery: ₹{order.delivery_amount}</p>
+                        )}
                       </div>
                       <Button size="sm" onClick={() => handleAcceptOrder(order.id)}>
                         Accept Order
@@ -386,6 +435,116 @@ const DeliveryDashboard: React.FC = () => {
               <Card className="p-6 text-center">
                 <Package className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
                 <p className="text-muted-foreground">No orders available in your area</p>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-3">
+            {/* Date Filter */}
+            <Card>
+              <CardContent className="p-3">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        {dateRange.from ? format(dateRange.from, 'dd MMM') : 'From'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.from}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, from: date }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <span className="text-muted-foreground">to</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-xs">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        {dateRange.to ? format(dateRange.to, 'dd MMM') : 'To'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dateRange.to}
+                        onSelect={(date) => setDateRange(prev => ({ ...prev, to: date }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {(dateRange.from || dateRange.to) && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setDateRange({})}
+                      className="text-xs"
+                    >
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {historyLoading ? (
+              [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32" />)
+            ) : orderHistory && orderHistory.length > 0 ? (
+              orderHistory.map((order) => {
+                const status = statusConfig[order.delivery_status as DeliveryStatus] || statusConfig.pending;
+
+                return (
+                  <Card key={order.id}>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">#{order.order_number}</span>
+                        <Badge className={status.color}>{status.label}</Badge>
+                      </div>
+                      
+                      <div className="text-xs text-muted-foreground">
+                        <p>Ordered: {format(new Date(order.created_at), 'dd MMM yyyy, hh:mm a')}</p>
+                        {order.delivered_at && (
+                          <p>Delivered: {format(new Date(order.delivered_at), 'dd MMM yyyy, hh:mm a')}</p>
+                        )}
+                      </div>
+
+                      {order.delivery_address && (
+                        <div className="flex items-start gap-1 text-sm text-muted-foreground">
+                          <MapPin className="h-3 w-3 mt-0.5 shrink-0" />
+                          <span className="line-clamp-1">{order.delivery_address}</span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2 border-t">
+                        <div className="flex items-center gap-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Order</p>
+                            <p className="font-semibold">₹{order.total_amount}</p>
+                          </div>
+                          {order.delivery_amount && order.delivery_amount > 0 && (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Delivery</p>
+                              <p className="font-semibold text-green-600">₹{order.delivery_amount}</p>
+                            </div>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="capitalize">
+                          {order.service_type.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            ) : (
+              <Card className="p-6 text-center">
+                <History className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-muted-foreground">No order history found</p>
+                <p className="text-xs text-muted-foreground mt-1">Try adjusting the date filter</p>
               </Card>
             )}
           </TabsContent>

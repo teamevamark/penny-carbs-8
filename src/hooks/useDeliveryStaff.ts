@@ -102,6 +102,7 @@ export function useDeliveryOrders() {
           order_number,
           service_type,
           total_amount,
+          delivery_amount,
           delivery_status,
           delivery_address,
           delivery_instructions,
@@ -110,11 +111,75 @@ export function useDeliveryOrders() {
           panchayat_id,
           ward_number,
           created_at,
+          delivered_at,
           customer_id
         `)
         .eq('assigned_delivery_id', user.id)
         .in('delivery_status', ['assigned', 'picked_up'])
         .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      
+      // Fetch customer details separately
+      const ordersWithCustomers = await Promise.all((data || []).map(async (order) => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name, mobile_number')
+          .eq('user_id', order.customer_id)
+          .maybeSingle();
+        
+        return {
+          ...order,
+          customer: profile || undefined,
+        };
+      }));
+
+      return ordersWithCustomers as DeliveryOrder[];
+    },
+    enabled: !!user?.id,
+  });
+}
+
+export function useDeliveryOrderHistory(startDate?: Date, endDate?: Date) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['delivery-order-history', user?.id, startDate?.toISOString(), endDate?.toISOString()],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      let query = supabase
+        .from('orders')
+        .select(`
+          id,
+          order_number,
+          service_type,
+          total_amount,
+          delivery_amount,
+          delivery_status,
+          delivery_address,
+          delivery_instructions,
+          panchayat_id,
+          ward_number,
+          created_at,
+          delivered_at,
+          customer_id
+        `)
+        .eq('assigned_delivery_id', user.id)
+        .order('created_at', { ascending: false });
+
+      // Add date filters
+      if (startDate) {
+        query = query.gte('created_at', startDate.toISOString());
+      }
+      if (endDate) {
+        // Add 1 day to include the entire end date
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        query = query.lte('created_at', endOfDay.toISOString());
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -156,6 +221,7 @@ export function useAvailableDeliveryOrders() {
           order_number,
           service_type,
           total_amount,
+          delivery_amount,
           delivery_status,
           delivery_address,
           delivery_instructions,
@@ -164,6 +230,7 @@ export function useAvailableDeliveryOrders() {
           panchayat_id,
           ward_number,
           created_at,
+          delivered_at,
           customer_id
         `)
         .in('panchayat_id', panchayatIds)
@@ -204,9 +271,15 @@ export function useAvailableDeliveryOrders() {
 
 export function useUpdateDeliveryStatus() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: string; status: DeliveryStatus }) => {
+    mutationFn: async ({ orderId, status, orderAmount, deliveryCharge }: { 
+      orderId: string; 
+      status: DeliveryStatus;
+      orderAmount?: number;
+      deliveryCharge?: number;
+    }) => {
       const updateData: Record<string, unknown> = { delivery_status: status };
       
       if (status === 'delivered') {
@@ -220,10 +293,70 @@ export function useUpdateDeliveryStatus() {
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Update wallet when order is delivered
+      if (status === 'delivered' && user?.id) {
+        // Get delivery staff id
+        const { data: staffData } = await supabase
+          .from('delivery_staff')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (staffData) {
+          // Get current wallet
+          const { data: wallet } = await supabase
+            .from('delivery_wallets')
+            .select('*')
+            .eq('delivery_staff_id', staffData.id)
+            .maybeSingle();
+
+          if (wallet) {
+            // Update wallet: collected_amount = order total, job_earnings = delivery charge
+            const newCollectedAmount = (wallet.collected_amount || 0) + (orderAmount || 0);
+            const newJobEarnings = (wallet.job_earnings || 0) + (deliveryCharge || 0);
+
+            await supabase
+              .from('delivery_wallets')
+              .update({
+                collected_amount: newCollectedAmount,
+                job_earnings: newJobEarnings,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('delivery_staff_id', staffData.id);
+
+            // Create wallet transactions for tracking
+            if (orderAmount && orderAmount > 0) {
+              await supabase.from('wallet_transactions').insert({
+                delivery_staff_id: staffData.id,
+                order_id: orderId,
+                transaction_type: 'collection',
+                amount: orderAmount,
+                description: 'Order amount collected',
+                status: 'pending',
+              });
+            }
+
+            if (deliveryCharge && deliveryCharge > 0) {
+              await supabase.from('wallet_transactions').insert({
+                delivery_staff_id: staffData.id,
+                order_id: orderId,
+                transaction_type: 'earning',
+                amount: deliveryCharge,
+                description: 'Delivery charge earned',
+                status: 'approved',
+              });
+            }
+          }
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['delivery-orders'] });
       queryClient.invalidateQueries({ queryKey: ['available-delivery-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery-order-history'] });
+      queryClient.invalidateQueries({ queryKey: ['delivery-wallet'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-transactions'] });
     },
   });
 }
