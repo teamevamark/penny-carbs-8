@@ -16,6 +16,7 @@ import {
   FileText, Users, Calendar, MapPin, Phone, Search, Edit, 
   Check, X, Loader2, IndianRupee, ChefHat
 } from 'lucide-react';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
 import {
   Dialog,
   DialogContent,
@@ -37,8 +38,25 @@ interface OrderItem {
     id: string;
     name: string;
     price: number;
+    platform_margin_type: string | null;
+    platform_margin_value: number | null;
   };
 }
+
+// Calculate customer price for an order item (base price + platform margin)
+const getItemCustomerPrice = (item: OrderItem): number => {
+  if (!item.food_item) return item.unit_price;
+  const basePrice = item.food_item.price;
+  const marginType = (item.food_item.platform_margin_type || 'percent') as 'percent' | 'fixed';
+  const marginValue = item.food_item.platform_margin_value || 0;
+  const margin = calculatePlatformMargin(basePrice, marginType, marginValue);
+  return basePrice + margin;
+};
+
+const getOrderCustomerTotal = (orderItems?: OrderItem[]): number => {
+  if (!orderItems || orderItems.length === 0) return 0;
+  return orderItems.reduce((sum, item) => sum + getItemCustomerPrice(item) * item.quantity, 0);
+};
 
 interface IndoorEventOrder {
   id: string;
@@ -122,7 +140,7 @@ const IndoorEventsPlanning: React.FC = () => {
       const orderIds = ordersData?.map((o: any) => o.id) || [];
       const { data: orderItems } = await supabase
         .from('order_items')
-        .select('id, order_id, food_item_id, quantity, unit_price, total_price, food_item:food_items(id, name, price)')
+        .select('id, order_id, food_item_id, quantity, unit_price, total_price, food_item:food_items(id, name, price, platform_margin_type, platform_margin_value)')
         .in('order_id', orderIds);
 
       const orderItemsMap = new Map<string, OrderItem[]>();
@@ -374,7 +392,7 @@ const IndoorEventsPlanning: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="font-bold text-indoor-events">₹{order.total_amount?.toLocaleString() || 0}</p>
+                    <p className="font-bold text-indoor-events">₹{(getOrderCustomerTotal(order.order_items) || order.total_amount)?.toLocaleString() || 0}</p>
                     <p className="text-xs text-muted-foreground">{order.event_type?.icon} {order.event_type?.name}</p>
                     <p className="text-xs text-muted-foreground capitalize mt-0.5">
                       {order.order_type === 'full_event' ? 'Full Planning' : 'Quick Booking'}
@@ -586,10 +604,10 @@ const IndoorEventsPlanning: React.FC = () => {
                               <div className="flex-1">
                                 <p className="font-medium">{item.food_item?.name}</p>
                                 <p className="text-xs text-muted-foreground">
-                                  {item.quantity} × ₹{item.unit_price}
+                                  {item.quantity} × ₹{getItemCustomerPrice(item)}
                                 </p>
                               </div>
-                              <p className="font-medium">₹{item.total_price?.toLocaleString()}</p>
+                              <p className="font-medium">₹{(getItemCustomerPrice(item) * item.quantity).toLocaleString()}</p>
                             </div>
                           ))}
                         </CardContent>
@@ -612,11 +630,21 @@ const IndoorEventsPlanning: React.FC = () => {
 
                     {/* Amount Card */}
                     <Card className="bg-indoor-events/5 border-indoor-events/20">
-                      <CardContent className="py-4 flex items-center justify-between">
-                        <span className="font-medium">Total Amount</span>
-                        <span className="text-xl font-bold text-indoor-events">
-                          ₹{selectedOrder.total_amount?.toLocaleString() || 0}
-                        </span>
+                      <CardContent className="py-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">Customer Total</span>
+                          <span className="text-xl font-bold text-indoor-events">
+                            ₹{(getOrderCustomerTotal(selectedOrder.order_items) || selectedOrder.total_amount)?.toLocaleString() || 0}
+                          </span>
+                        </div>
+                        {selectedOrder.order_items && selectedOrder.order_items.length > 0 && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-muted-foreground">Cook's Share</span>
+                            <span className="text-sm text-muted-foreground">
+                              ₹{selectedOrder.order_items.reduce((sum, item) => sum + (item.food_item?.price || item.unit_price) * item.quantity, 0).toLocaleString()}
+                            </span>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </>
