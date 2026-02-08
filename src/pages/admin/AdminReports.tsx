@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useSalesReport, useCookPerformanceReport, useDeliverySettlementReport, useReferralReport, usePanchayats } from '@/hooks/useReports';
+import { useSalesReport, useCookPerformanceReport, useDeliverySettlementReport, useReferralReport, usePanchayats, useVehicleRentReport } from '@/hooks/useReports';
 import { useProfitLossReport } from '@/hooks/useProfitLoss';
 import { exportToCSV, exportToExcel } from '@/lib/exportUtils';
 import { ReportFilters } from '@/types/reports';
@@ -45,6 +45,7 @@ const AdminReports: React.FC = () => {
   const { data: deliveryData, isLoading: deliveryLoading } = useDeliverySettlementReport();
   const { data: referralData, isLoading: referralLoading } = useReferralReport();
   const { data: profitLossData, isLoading: profitLossLoading } = useProfitLossReport(filters);
+  const { data: vehicleRentData, isLoading: vehicleRentLoading } = useVehicleRentReport(filters);
 
   // Process sales data for display
   const salesSummary = useMemo(() => {
@@ -446,6 +447,71 @@ const AdminReports: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="delivery" className="space-y-4">
+            {/* Indoor Event Vehicle Rents */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Indoor Event Vehicle Rents (Delivery Expense)</CardTitle>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => {
+                    if (!vehicleRentData) return;
+                    const exportData = vehicleRentData.map((v: any) => ({
+                      order_number: v.orders?.order_number || '',
+                      vehicle_number: v.vehicle_number,
+                      driver_name: v.driver_name || '',
+                      driver_mobile: v.driver_mobile,
+                      rent_amount: v.rent_amount,
+                      panchayat: v.orders?.panchayats?.name || '',
+                      date: format(new Date(v.created_at), 'dd/MM/yyyy'),
+                    }));
+                    exportToCSV(exportData, 'vehicle-rent-report');
+                  }}>
+                    <Download className="mr-2 h-4 w-4" />CSV
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {vehicleRentLoading ? (
+                  <p className="text-center text-muted-foreground">Loading...</p>
+                ) : vehicleRentData && vehicleRentData.length > 0 ? (
+                  <>
+                    <div className="mb-4 p-3 rounded-lg bg-muted">
+                      <p className="text-sm text-muted-foreground">Total Vehicle Rent Expense</p>
+                      <p className="text-2xl font-bold text-destructive">
+                        ₹{vehicleRentData.reduce((sum: number, v: any) => sum + (v.rent_amount || 0), 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order #</TableHead>
+                          <TableHead>Vehicle</TableHead>
+                          <TableHead>Driver</TableHead>
+                          <TableHead>Panchayat</TableHead>
+                          <TableHead className="text-right">Rent (₹)</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vehicleRentData.map((v: any) => (
+                          <TableRow key={v.id}>
+                            <TableCell className="font-mono text-xs">{v.orders?.order_number || '-'}</TableCell>
+                            <TableCell className="font-mono">{v.vehicle_number}</TableCell>
+                            <TableCell>{v.driver_name || '-'}</TableCell>
+                            <TableCell>{v.orders?.panchayats?.name || '-'}</TableCell>
+                            <TableCell className="text-right font-medium text-destructive">₹{(v.rent_amount || 0).toLocaleString()}</TableCell>
+                            <TableCell className="text-xs">{format(new Date(v.created_at), 'dd MMM yyyy')}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : (
+                  <p className="text-center text-muted-foreground">No vehicle rent records found</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Delivery Staff Settlements */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Delivery Settlement Report</CardTitle>

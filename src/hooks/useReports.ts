@@ -158,6 +158,39 @@ export const useReferralReport = () => {
   });
 };
 
+export const useVehicleRentReport = (filters: ReportFilters) => {
+  return useQuery({
+    queryKey: ['vehicle-rent-report', filters],
+    queryFn: async () => {
+      let query = supabase
+        .from('indoor_event_vehicles')
+        .select(`
+          id,
+          order_id,
+          vehicle_number,
+          driver_name,
+          driver_mobile,
+          rent_amount,
+          created_at,
+          orders!indoor_event_vehicles_order_id_fkey(order_number, status, panchayat_id, panchayats!orders_panchayat_id_fkey(name))
+        `)
+        .not('rent_amount', 'is', null)
+        .gt('rent_amount', 0);
+
+      if (filters.startDate) {
+        query = query.gte('created_at', filters.startDate.toISOString());
+      }
+      if (filters.endDate) {
+        query = query.lte('created_at', filters.endDate.toISOString());
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+};
+
 export const usePanchayats = () => {
   return useQuery({
     queryKey: ['panchayats'],
