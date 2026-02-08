@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2, RotateCcw, Truck, Package, CheckCircle2 } from 'lucide-react';
+import { Eye, Search, Calendar, Users, MapPin, Phone, ChefHat, Loader2, RotateCcw, Truck, Package, CheckCircle2, Car } from 'lucide-react';
+import VehicleSelectionDialog from '@/components/admin/indoor-events/VehicleSelectionDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Dialog,
@@ -82,6 +83,8 @@ const IndoorEventsOrders: React.FC = () => {
   const [cookSelectionOpen, setCookSelectionOpen] = useState(false);
   const [selectedCooks, setSelectedCooks] = useState<string[]>([]);
   const [dishCookAssignments, setDishCookAssignments] = useState<Map<string, string>>(new Map());
+  const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false);
+  const [vehicleDialogOrder, setVehicleDialogOrder] = useState<IndoorEventOrder | null>(null);
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading, refetch } = useQuery({
@@ -658,8 +661,14 @@ const IndoorEventsOrders: React.FC = () => {
                     </>
                   )}
                   {selectedOrder.status === 'ready' && (
-                    <Button size="sm" onClick={() => handleUpdateStatus(selectedOrder.id, 'out_for_delivery')}>
-                      <Truck className="h-4 w-4 mr-1" />
+                    <Button 
+                      size="sm" 
+                      onClick={() => {
+                        setVehicleDialogOrder(selectedOrder);
+                        setVehicleDialogOpen(true);
+                      }}
+                    >
+                      <Car className="h-4 w-4 mr-1" />
                       Shipped (Out for Delivery)
                     </Button>
                   )}
@@ -827,6 +836,21 @@ const IndoorEventsOrders: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Vehicle Selection Dialog */}
+      {vehicleDialogOrder && (
+        <VehicleSelectionDialog
+          open={vehicleDialogOpen}
+          onOpenChange={setVehicleDialogOpen}
+          orderId={vehicleDialogOrder.id}
+          orderNumber={vehicleDialogOrder.order_number}
+          onSuccess={() => {
+            setSelectedOrder(null);
+            setVehicleDialogOrder(null);
+            refetch();
+          }}
+        />
+      )}
     </IndoorEventsShell>
   );
 };
