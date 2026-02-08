@@ -48,6 +48,7 @@ const VehicleSelectionDialog: React.FC<VehicleSelectionDialogProps> = ({
   const [vehicleNumber, setVehicleNumber] = useState('');
   const [driverName, setDriverName] = useState('');
   const [driverMobile, setDriverMobile] = useState('');
+  const [rentAmount, setRentAmount] = useState('');
 
   // Get recently used vehicles (unique by vehicle_number, last used first)
   const { data: recentVehicles, isLoading: vehiclesLoading } = useQuery({
@@ -84,6 +85,7 @@ const VehicleSelectionDialog: React.FC<VehicleSelectionDialogProps> = ({
     setVehicleNumber('');
     setDriverName('');
     setDriverMobile('');
+    setRentAmount('');
     setActiveTab('existing');
   };
 
@@ -116,6 +118,7 @@ const VehicleSelectionDialog: React.FC<VehicleSelectionDialogProps> = ({
       }
 
       // Insert vehicle record for this order
+      const parsedRent = rentAmount ? parseFloat(rentAmount) : null;
       const { error: vehicleError } = await supabase
         .from('indoor_event_vehicles')
         .insert({
@@ -123,6 +126,7 @@ const VehicleSelectionDialog: React.FC<VehicleSelectionDialogProps> = ({
           vehicle_number: vehicleData.vehicle_number,
           driver_name: vehicleData.driver_name,
           driver_mobile: vehicleData.driver_mobile,
+          rent_amount: parsedRent,
         });
 
       if (vehicleError) throw vehicleError;
@@ -289,6 +293,22 @@ const VehicleSelectionDialog: React.FC<VehicleSelectionDialogProps> = ({
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Vehicle Rent - shown for both tabs */}
+        <div className="space-y-2 border-t pt-4">
+          <Label htmlFor="rent-amount">Vehicle Rent (₹)</Label>
+          <Input
+            id="rent-amount"
+            type="number"
+            placeholder="Enter rent amount (optional)"
+            value={rentAmount}
+            onChange={(e) => setRentAmount(e.target.value)}
+            min="0"
+          />
+          <p className="text-xs text-muted-foreground">
+            This will be recorded as a delivery expense in P&L reports
+          </p>
+        </div>
 
         <DialogFooter className="mt-4">
           <Button variant="outline" onClick={handleClose}>

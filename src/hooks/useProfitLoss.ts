@@ -75,6 +75,19 @@ export const useProfitLossReport = (filters: ReportFilters) => {
       const { data: orders, error: ordersError } = await ordersQuery;
       if (ordersError) throw ordersError;
 
+      // Fetch indoor event vehicle rents for delivered orders
+      const deliveredOrderIds = orders?.map(o => o.id) || [];
+      let vehicleRentTotal = 0;
+      if (deliveredOrderIds.length > 0) {
+        const { data: vehicles, error: vehiclesError } = await supabase
+          .from('indoor_event_vehicles')
+          .select('order_id, rent_amount')
+          .in('order_id', deliveredOrderIds);
+        if (!vehiclesError && vehicles) {
+          vehicleRentTotal = vehicles.reduce((sum, v) => sum + (v.rent_amount || 0), 0);
+        }
+      }
+
       // Fetch referral commissions for the period
       let referralsQuery = supabase
         .from('referrals')
@@ -152,6 +165,9 @@ export const useProfitLossReport = (filters: ReportFilters) => {
         byDate[dateKey].order_count++;
       });
 
+      // Add vehicle rents to delivery payouts
+      deliveryPayouts += vehicleRentTotal;
+
       // Calculate referral commissions
       const referralCommissions = referrals
         ?.filter(r => r.status === 'paid')
@@ -162,7 +178,7 @@ export const useProfitLossReport = (filters: ReportFilters) => {
         d.net_profit = d.platform_margin; // Simplified: platform margin is our profit
       });
 
-      const netProfit = platformMarginRevenue - referralCommissions;
+      const netProfit = platformMarginRevenue - deliveryPayouts - referralCommissions;
 
       return {
         summary: {
