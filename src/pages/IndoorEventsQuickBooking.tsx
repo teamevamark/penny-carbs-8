@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, CalendarDays, Users, MapPin, Phone, Zap, Loader2, CheckCircle, UtensilsCrossed } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
 import EventTypeSelector from '@/components/events/EventTypeSelector';
 import QuickBookingFoodSelection from '@/components/indoor-events/QuickBookingFoodSelection';
 import PlannerStepCard from '@/components/indoor-events/PlannerStepCard';
@@ -83,10 +84,18 @@ const IndoorEventsQuickBooking: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const minDate = addDays(startOfDay(new Date()), 1);
 
+  // Helper to get customer price (base + margin)
+  const getCustomerPrice = (item: FoodItem): number => {
+    const marginType = (item.platform_margin_type || 'percent') as 'percent' | 'fixed';
+    const marginValue = item.platform_margin_value || 0;
+    const margin = calculatePlatformMargin(item.price, marginType, marginValue);
+    return item.price + margin;
+  };
+
   // Calculate totals from selected items
   const totalItemsCount = Array.from(selectedItems.values()).reduce((sum, { quantity }) => sum + quantity, 0);
   const estimatedTotal = Array.from(selectedItems.values()).reduce(
-    (sum, { item, quantity }) => sum + (item.price * quantity), 
+    (sum, { item, quantity }) => sum + (getCustomerPrice(item) * quantity), 
     0
   );
 
@@ -215,13 +224,16 @@ const IndoorEventsQuickBooking: React.FC = () => {
 
       // Insert order items if any selected
       if (totalItemsCount > 0 && orderData) {
-        const orderItems = Array.from(selectedItems.values()).map(({ item, quantity }) => ({
-          order_id: orderData.id,
-          food_item_id: item.id,
-          quantity,
-          unit_price: item.price,
-          total_price: item.price * quantity,
-        }));
+        const orderItems = Array.from(selectedItems.values()).map(({ item, quantity }) => {
+          const customerPrice = getCustomerPrice(item);
+          return {
+            order_id: orderData.id,
+            food_item_id: item.id,
+            quantity,
+            unit_price: customerPrice,
+            total_price: customerPrice * quantity,
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from('order_items')

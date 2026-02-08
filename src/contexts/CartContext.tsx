@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import type { CartItem, FoodItemWithImages } from '@/types/database';
 import { toast } from '@/hooks/use-toast';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
 
 interface CartContextType {
   items: CartItem[];
@@ -205,8 +206,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
   const totalAmount = items.reduce((sum, item) => {
-    const price = item.food_item?.price || 0;
-    return sum + (price * item.quantity);
+    const basePrice = item.food_item?.price || 0;
+    const marginType = (item.food_item?.platform_margin_type || 'percent') as 'percent' | 'fixed';
+    const marginValue = item.food_item?.platform_margin_value || 0;
+    const margin = calculatePlatformMargin(basePrice, marginType, marginValue);
+    const customerPrice = basePrice + margin;
+    return sum + (customerPrice * item.quantity);
   }, 0);
 
   return (

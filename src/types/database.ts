@@ -73,6 +73,8 @@ export interface FoodItem {
   created_by: string | null;
   panchayat_id: string | null;
   ward_number: number | null;
+  platform_margin_type: string | null;
+  platform_margin_value: number | null;
   created_at: string;
   updated_at: string;
 }

@@ -8,8 +8,8 @@ import { calculatePlatformMargin } from '@/lib/priceUtils';
 
 // Helper to calculate customer display price (base + margin)
 const getCustomerPrice = (item: CustomerCloudKitchenItem): number => {
-  const marginType = ((item as any).platform_margin_type || 'percent') as 'percent' | 'fixed';
-  const marginValue = (item as any).platform_margin_value || 0;
+  const marginType = (item.platform_margin_type || 'percent') as 'percent' | 'fixed';
+  const marginValue = item.platform_margin_value || 0;
   const margin = calculatePlatformMargin(item.price, marginType, marginValue);
   return item.price + margin;
 };

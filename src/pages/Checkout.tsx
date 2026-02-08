@@ -12,6 +12,16 @@ import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, MapPin, ShoppingBag, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AddressSelector from '@/components/customer/AddressSelector';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
+
+// Helper to get customer price (base + margin)
+const getCustomerPrice = (foodItem: any): number => {
+  if (!foodItem) return 0;
+  const marginType = (foodItem.platform_margin_type || 'percent') as 'percent' | 'fixed';
+  const marginValue = foodItem.platform_margin_value || 0;
+  const margin = calculatePlatformMargin(foodItem.price, marginType, marginValue);
+  return foodItem.price + margin;
+};
 
 const Checkout: React.FC = () => {
   const navigate = useNavigate();
@@ -114,14 +124,17 @@ const Checkout: React.FC = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items
-      const orderItems = items.map(item => ({
-        order_id: order.id,
-        food_item_id: item.food_item_id,
-        quantity: item.quantity,
-        unit_price: item.food_item?.price || 0,
-        total_price: (item.food_item?.price || 0) * item.quantity,
-      }));
+      // Create order items with customer price (base + platform margin)
+      const orderItems = items.map(item => {
+        const customerPrice = getCustomerPrice(item.food_item);
+        return {
+          order_id: order.id,
+          food_item_id: item.food_item_id,
+          quantity: item.quantity,
+          unit_price: customerPrice,
+          total_price: customerPrice * item.quantity,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -208,14 +221,17 @@ const Checkout: React.FC = () => {
             <CardTitle className="text-base">Order Summary</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span>
-                  {item.food_item?.name} × {item.quantity}
-                </span>
-                <span>₹{((item.food_item?.price || 0) * item.quantity).toFixed(0)}</span>
-              </div>
-            ))}
+            {items.map((item) => {
+              const customerPrice = getCustomerPrice(item.food_item);
+              return (
+                <div key={item.id} className="flex justify-between text-sm">
+                  <span>
+                    {item.food_item?.name} × {item.quantity}
+                  </span>
+                  <span>₹{(customerPrice * item.quantity).toFixed(0)}</span>
+                </div>
+              );
+            })}
             <Separator />
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Subtotal</span>

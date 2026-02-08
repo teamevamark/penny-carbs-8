@@ -16,6 +16,8 @@ export interface CustomerCloudKitchenItem {
   set_size: number;
   min_order_sets: number;
   cloud_kitchen_slot_id: string | null;
+  platform_margin_type: string | null;
+  platform_margin_value: number | null;
   images: {
     id: string;
     image_url: string;
@@ -169,6 +171,8 @@ export function useCustomerDivisionItems(divisionId: string | null) {
           set_size,
           min_order_sets,
           cloud_kitchen_slot_id,
+          platform_margin_type,
+          platform_margin_value,
           food_item_images(id, image_url, is_primary)
         `)
         .eq('cloud_kitchen_slot_id', divisionId)
@@ -225,6 +229,8 @@ export function useCustomerDivisionItems(divisionId: string | null) {
               set_size: item.set_size || 1,
               min_order_sets: item.min_order_sets || 1,
               cloud_kitchen_slot_id: item.cloud_kitchen_slot_id,
+              platform_margin_type: item.platform_margin_type,
+              platform_margin_value: item.platform_margin_value,
               images: item.food_item_images || [],
               cook: {
                 id: cd.cooks.id,
@@ -246,6 +252,8 @@ export function useCustomerDivisionItems(divisionId: string | null) {
             set_size: item.set_size || 1,
             min_order_sets: item.min_order_sets || 1,
             cloud_kitchen_slot_id: item.cloud_kitchen_slot_id,
+            platform_margin_type: item.platform_margin_type,
+            platform_margin_value: item.platform_margin_value,
             images: item.food_item_images || [],
             cook: null,
             unique_key: `${item.id}_no_cook`,

@@ -13,6 +13,15 @@ import { ArrowLeft, MapPin, Clock, Loader2, ChefHat, AlertCircle } from 'lucide-
 import { toast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { CookInfo } from '@/hooks/useCustomerCloudKitchen';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
+
+// Helper to get customer price (base + margin) for cloud kitchen items
+const getCustomerPriceFromItem = (item: CartItemData['item']): number => {
+  const marginType = (item.platform_margin_type || 'percent') as 'percent' | 'fixed';
+  const marginValue = item.platform_margin_value || 0;
+  const margin = calculatePlatformMargin(item.price, marginType, marginValue);
+  return item.price + margin;
+};
 
 interface CartItemData {
   item: {
@@ -23,6 +32,8 @@ interface CartItemData {
     min_order_sets: number;
     cook: CookInfo;
     unique_key: string;
+    platform_margin_type?: string | null;
+    platform_margin_value?: number | null;
   };
   quantity: number;
 }
@@ -191,15 +202,18 @@ const CloudKitchenCheckout: React.FC = () => {
 
       if (orderError) throw orderError;
 
-      // Create order items with the specific cook assigned to each item
-      const orderItems = cartItems.map(cartItem => ({
-        order_id: order.id,
-        food_item_id: cartItem.item.id,
-        quantity: cartItem.quantity * (cartItem.item.set_size || 1),
-        unit_price: cartItem.item.price,
-        total_price: cartItem.item.price * cartItem.quantity * (cartItem.item.set_size || 1),
-        assigned_cook_id: cartItem.item.cook.id, // Assign to the selected cook
-      }));
+      // Create order items with customer price (base + platform margin)
+      const orderItems = cartItems.map(cartItem => {
+        const customerPrice = getCustomerPriceFromItem(cartItem.item);
+        return {
+          order_id: order.id,
+          food_item_id: cartItem.item.id,
+          quantity: cartItem.quantity * (cartItem.item.set_size || 1),
+          unit_price: customerPrice,
+          total_price: customerPrice * cartItem.quantity * (cartItem.item.set_size || 1),
+          assigned_cook_id: cartItem.item.cook.id,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('order_items')
@@ -322,7 +336,8 @@ const CloudKitchenCheckout: React.FC = () => {
                 </div>
                 {items.map((cartItem) => {
                   const setSize = cartItem.item.set_size || 1;
-                  const itemTotal = cartItem.item.price * cartItem.quantity * setSize;
+                  const customerPrice = getCustomerPriceFromItem(cartItem.item);
+                  const itemTotal = customerPrice * cartItem.quantity * setSize;
                   return (
                     <div key={cartItem.item.unique_key} className="flex justify-between text-sm pl-6">
                       <span>

@@ -13,6 +13,15 @@ import {
   type CustomerCloudKitchenItem,
 } from '@/hooks/useCustomerCloudKitchen';
 import { toast } from '@/hooks/use-toast';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
+
+// Helper to get customer price (base + margin) for cloud kitchen items
+const getCustomerPrice = (item: CustomerCloudKitchenItem): number => {
+  const marginType = (item.platform_margin_type || 'percent') as 'percent' | 'fixed';
+  const marginValue = item.platform_margin_value || 0;
+  const margin = calculatePlatformMargin(item.price, marginType, marginValue);
+  return item.price + margin;
+};
 
 interface CartItem {
   item: CustomerCloudKitchenItem;
@@ -49,7 +58,7 @@ const CloudKitchenOrder: React.FC = () => {
   const totalSets = cartItems.reduce((sum, c) => sum + c.quantity, 0);
   const totalAmount = cartItems.reduce((sum, c) => {
     const setSize = c.item.set_size || 1;
-    return sum + c.quantity * c.item.price * setSize;
+    return sum + c.quantity * getCustomerPrice(c.item) * setSize;
   }, 0);
 
   const handleProceed = () => {
