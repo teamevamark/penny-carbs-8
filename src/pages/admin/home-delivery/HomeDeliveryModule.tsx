@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,13 +20,31 @@ import {
 } from 'lucide-react';
 import HomeDeliveryItems from './HomeDeliveryItems';
 import HomeDeliveryDelivery from './HomeDeliveryDelivery';
+import HomeDeliveryOrders from './HomeDeliveryOrders';
+import HomeDeliveryETA from './HomeDeliveryETA';
+import HomeDeliverySettlements from './HomeDeliverySettlements';
 
-type SubPage = 'dashboard' | 'items' | 'delivery';
+type SubPage = 'dashboard' | 'items' | 'delivery' | 'orders' | 'eta' | 'settlements';
 
 const HomeDeliveryModule: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { role } = useAuth();
-  const [currentPage, setCurrentPage] = useState<SubPage>('dashboard');
+
+  // Derive sub-page from URL path
+  const getSubPageFromPath = (): SubPage => {
+    const path = location.pathname;
+    if (path.includes('/orders')) return 'orders';
+    if (path.includes('/eta')) return 'eta';
+    if (path.includes('/settlements')) return 'settlements';
+    return 'dashboard';
+  };
+
+  const [currentPage, setCurrentPage] = useState<SubPage>(getSubPageFromPath());
+
+  useEffect(() => {
+    setCurrentPage(getSubPageFromPath());
+  }, [location.pathname]);
 
   const isAdmin = role === 'super_admin' || role === 'admin';
 
@@ -69,24 +87,18 @@ const HomeDeliveryModule: React.FC = () => {
     );
   }
 
-  // Sub-page rendering
-  if (currentPage === 'items') {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-50 border-b bg-homemade text-white">
-          <div className="flex h-14 items-center px-4">
-            <Home className="h-6 w-6 mr-2" />
-            <h1 className="font-display text-lg font-semibold">Home Food Delivery</h1>
-          </div>
-        </header>
-        <main className="p-4 pb-20">
-          <HomeDeliveryItems onBack={() => setCurrentPage('dashboard')} />
-        </main>
-      </div>
-    );
-  }
+  const goToDashboard = () => navigate('/admin/home-delivery');
 
-  if (currentPage === 'delivery') {
+  // Sub-page rendering
+  const subPageContent: Record<string, React.ReactNode> = {
+    items: <HomeDeliveryItems onBack={goToDashboard} />,
+    delivery: <HomeDeliveryDelivery onBack={goToDashboard} />,
+    orders: <HomeDeliveryOrders onBack={goToDashboard} />,
+    eta: <HomeDeliveryETA onBack={goToDashboard} />,
+    settlements: <HomeDeliverySettlements onBack={goToDashboard} />,
+  };
+
+  if (currentPage !== 'dashboard' && subPageContent[currentPage]) {
     return (
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-50 border-b bg-homemade text-white">
@@ -96,7 +108,7 @@ const HomeDeliveryModule: React.FC = () => {
           </div>
         </header>
         <main className="p-4 pb-20">
-          <HomeDeliveryDelivery onBack={() => setCurrentPage('dashboard')} />
+          {subPageContent[currentPage]}
         </main>
       </div>
     );
