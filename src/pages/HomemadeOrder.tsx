@@ -52,14 +52,21 @@ const HomemadeOrder: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // 1. Get all food_item_ids that have at least one cook allocated
+        // 1. Get all food_item_ids that have at least one active+available cook allocated
         const { data: cookDishes, error: cookDishesError } = await supabase
           .from('cook_dishes')
-          .select('food_item_id');
+          .select(`
+            food_item_id,
+            cooks!inner(is_active, is_available)
+          `);
 
         if (cookDishesError) throw cookDishesError;
 
-        const allocatedItemIds = [...new Set((cookDishes || []).map(cd => cd.food_item_id))];
+        const allocatedItemIds = [...new Set(
+          (cookDishes || [])
+            .filter((cd: any) => cd.cooks?.is_active && cd.cooks?.is_available)
+            .map((cd: any) => cd.food_item_id)
+        )];
 
         if (allocatedItemIds.length === 0) {
           setItems([]);

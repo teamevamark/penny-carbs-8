@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Star, Percent } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
+import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 
 interface FeaturedItem {
   id: string;
@@ -40,8 +41,9 @@ const FeaturedItems: React.FC = () => {
   const { addToCart } = useCart();
   const { selectedPanchayat } = useLocation();
   const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
+  const { data: allocatedIds } = useCookAllocatedItemIds();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: rawItems, isLoading } = useQuery({
     queryKey: ['featured-items', selectedPanchayat?.id],
     queryFn: async () => {
       let query = supabase
@@ -76,6 +78,13 @@ const FeaturedItems: React.FC = () => {
     },
   });
 
+  // Filter out homemade items not allocated to any active cook
+  const items = (rawItems || []).filter(item => {
+    if ((item.service_type === 'homemade') && allocatedIds) {
+      return allocatedIds.has(item.id);
+    }
+    return true; // non-homemade items pass through
+  });
   const handleAddToCart = async (e: React.MouseEvent, item: FeaturedItem) => {
     e.stopPropagation();
     if (item.service_type === 'indoor_events') {

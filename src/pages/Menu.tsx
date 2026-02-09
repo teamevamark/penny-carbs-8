@@ -15,6 +15,7 @@ import { ArrowLeft, Plus, Clock, Search, Leaf, Filter } from 'lucide-react';
 import CartButton from '@/components/customer/CartButton';
 import BottomNav from '@/components/customer/BottomNav';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
+import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 
 // Helper to calculate customer display price
 const getCustomerPrice = (item: FoodItemWithImages): number => {
@@ -36,6 +37,7 @@ const Menu: React.FC = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
+  const { data: allocatedIds } = useCookAllocatedItemIds();
   
   const [items, setItems] = useState<FoodItemWithImages[]>([]);
   const [categories, setCategories] = useState<FoodCategory[]>([]);
@@ -72,7 +74,12 @@ const Menu: React.FC = () => {
         ]);
 
         if (itemsRes.data) {
-          setItems(itemsRes.data as FoodItemWithImages[]);
+          let filtered = itemsRes.data as FoodItemWithImages[];
+          // For homemade, only show items allocated to an active cook
+          if (validServiceType === 'homemade' && allocatedIds) {
+            filtered = filtered.filter(item => allocatedIds.has(item.id));
+          }
+          setItems(filtered);
         }
         if (categoriesRes.data) {
           setCategories(categoriesRes.data as FoodCategory[]);
@@ -85,7 +92,7 @@ const Menu: React.FC = () => {
     };
 
     fetchData();
-  }, [validServiceType]);
+  }, [validServiceType, allocatedIds]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();

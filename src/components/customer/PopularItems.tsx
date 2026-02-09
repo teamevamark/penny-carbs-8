@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Plus, Clock, ChevronRight } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
+import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 
 // Helper to calculate customer display price (base + margin)
 const getCustomerPrice = (item: FoodItemWithImages): number => {
@@ -45,6 +46,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   const { addToCart } = useCart();
   const { selectedPanchayat } = useLocation();
   const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
+  const { data: allocatedIds } = useCookAllocatedItemIds();
   const [items, setItems] = useState<FoodItemWithImages[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,7 +71,12 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         const { data, error } = await query.limit(limit);
 
         if (error) throw error;
-        setItems(data as FoodItemWithImages[]);
+        // For homemade items, only show those allocated to an active cook
+        let filtered = data as FoodItemWithImages[];
+        if (serviceType === 'homemade' && allocatedIds) {
+          filtered = filtered.filter(item => allocatedIds.has(item.id));
+        }
+        setItems(filtered);
       } catch (error) {
         console.error('Error fetching items:', error);
       } finally {
@@ -77,7 +84,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
       }
     };
     fetchItems();
-  }, [serviceType, limit, selectedPanchayat]);
+  }, [serviceType, limit, selectedPanchayat, allocatedIds]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
