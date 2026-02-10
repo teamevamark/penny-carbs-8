@@ -34,6 +34,8 @@ interface QuickBookingFormDialogProps {
   onOpenChange: (open: boolean) => void;
   selectedItems: Map<string, SelectedItem>;
   estimatedTotal: number;
+  guestCount?: number;
+  selectedEventType?: EventType | null;
   onSuccess: () => void;
 }
 
@@ -42,16 +44,18 @@ const QuickBookingFormDialog: React.FC<QuickBookingFormDialogProps> = ({
   onOpenChange,
   selectedItems,
   estimatedTotal,
+  guestCount: propGuestCount,
+  selectedEventType: propSelectedEventType,
   onSuccess,
 }) => {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { selectedPanchayat, selectedWardNumber } = useLocation();
 
-  const [selectedEventType, setSelectedEventType] = useState<EventType | null>(null);
+  const [selectedEventType, setSelectedEventType] = useState<EventType | null>(propSelectedEventType || null);
   const [eventDate, setEventDate] = useState<Date | undefined>();
   const [eventTime, setEventTime] = useState('');
-  const [guestCount, setGuestCount] = useState<number>(50);
+  const [guestCount, setGuestCount] = useState<number>(propGuestCount || 50);
   const [contactNumber, setContactNumber] = useState(profile?.mobile_number || '');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [eventDetails, setEventDetails] = useState('');
