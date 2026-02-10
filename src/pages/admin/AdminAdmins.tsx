@@ -33,14 +33,19 @@ import AdminNavbar from '@/components/admin/AdminNavbar';
 interface AdminUser {
   id: string;
   user_id: string;
-  can_manage_items: boolean;
-  can_manage_orders: boolean;
-  can_assign_orders: boolean;
-  can_register_cooks: boolean;
-  can_register_delivery_staff: boolean;
-  can_access_reports: boolean;
-  can_approve_settlements: boolean;
+  perm_items: string;
+  perm_orders: string;
+  perm_assign_orders: string;
+  perm_cooks: string;
+  perm_delivery_staff: string;
+  perm_reports: string;
+  perm_settlements: string;
+  perm_banners: string;
+  perm_categories: string;
+  perm_locations: string;
+  perm_special_offers: string;
   created_at: string;
+  updated_at: string;
   profile?: {
     name: string;
     mobile_number: string;
@@ -73,13 +78,13 @@ const AdminAdmins: React.FC = () => {
   
   const [formData, setFormData] = useState({
     user_id: '',
-    can_manage_items: false,
-    can_manage_orders: false,
-    can_assign_orders: false,
-    can_register_cooks: false,
-    can_register_delivery_staff: false,
-    can_access_reports: false,
-    can_approve_settlements: false,
+    perm_items: 'none',
+    perm_orders: 'none',
+    perm_assign_orders: 'none',
+    perm_cooks: 'none',
+    perm_delivery_staff: 'none',
+    perm_reports: 'none',
+    perm_settlements: 'none',
   });
 
   const isSuperAdmin = role === 'super_admin';
@@ -187,13 +192,13 @@ const AdminAdmins: React.FC = () => {
       } : null);
       setFormData({
         user_id: admin.user_id,
-        can_manage_items: admin.can_manage_items,
-        can_manage_orders: admin.can_manage_orders,
-        can_assign_orders: admin.can_assign_orders,
-        can_register_cooks: admin.can_register_cooks,
-        can_register_delivery_staff: admin.can_register_delivery_staff,
-        can_access_reports: admin.can_access_reports,
-        can_approve_settlements: admin.can_approve_settlements,
+        perm_items: admin.perm_items,
+        perm_orders: admin.perm_orders,
+        perm_assign_orders: admin.perm_assign_orders,
+        perm_cooks: admin.perm_cooks,
+        perm_delivery_staff: admin.perm_delivery_staff,
+        perm_reports: admin.perm_reports,
+        perm_settlements: admin.perm_settlements,
       });
     } else {
       setEditingAdmin(null);
@@ -202,13 +207,13 @@ const AdminAdmins: React.FC = () => {
       setSearchResults([]);
       setFormData({
         user_id: '',
-        can_manage_items: false,
-        can_manage_orders: false,
-        can_assign_orders: false,
-        can_register_cooks: false,
-        can_register_delivery_staff: false,
-        can_access_reports: false,
-        can_approve_settlements: false,
+        perm_items: 'none',
+        perm_orders: 'none',
+        perm_assign_orders: 'none',
+        perm_cooks: 'none',
+        perm_delivery_staff: 'none',
+        perm_reports: 'none',
+        perm_settlements: 'none',
       });
     }
     setIsDialogOpen(true);
@@ -227,13 +232,13 @@ const AdminAdmins: React.FC = () => {
     try {
       const permissionData = {
         user_id: formData.user_id,
-        can_manage_items: formData.can_manage_items,
-        can_manage_orders: formData.can_manage_orders,
-        can_assign_orders: formData.can_assign_orders,
-        can_register_cooks: formData.can_register_cooks,
-        can_register_delivery_staff: formData.can_register_delivery_staff,
-        can_access_reports: formData.can_access_reports,
-        can_approve_settlements: formData.can_approve_settlements,
+        perm_items: formData.perm_items,
+        perm_orders: formData.perm_orders,
+        perm_assign_orders: formData.perm_assign_orders,
+        perm_cooks: formData.perm_cooks,
+        perm_delivery_staff: formData.perm_delivery_staff,
+        perm_reports: formData.perm_reports,
+        perm_settlements: formData.perm_settlements,
       };
 
       if (editingAdmin) {
@@ -313,13 +318,13 @@ const AdminAdmins: React.FC = () => {
   });
 
   const permissionLabels = [
-    { key: 'can_manage_items', label: 'Manage Items' },
-    { key: 'can_manage_orders', label: 'Manage Orders' },
-    { key: 'can_assign_orders', label: 'Assign Orders' },
-    { key: 'can_register_cooks', label: 'Register Cooks' },
-    { key: 'can_register_delivery_staff', label: 'Register Delivery Staff' },
-    { key: 'can_access_reports', label: 'Access Reports' },
-    { key: 'can_approve_settlements', label: 'Approve Settlements' },
+    { key: 'perm_items', label: 'Manage Items' },
+    { key: 'perm_orders', label: 'Manage Orders' },
+    { key: 'perm_assign_orders', label: 'Assign Orders' },
+    { key: 'perm_cooks', label: 'Register Cooks' },
+    { key: 'perm_delivery_staff', label: 'Register Delivery Staff' },
+    { key: 'perm_reports', label: 'Access Reports' },
+    { key: 'perm_settlements', label: 'Approve Settlements' },
   ];
 
   if (!isSuperAdmin) {
@@ -414,7 +419,7 @@ const AdminAdmins: React.FC = () => {
                   </div>
                   <div className="mt-3 flex flex-wrap gap-1">
                     {permissionLabels.map(({ key, label }) => (
-                      admin[key as keyof AdminUser] && (
+                      admin[key as keyof AdminUser] !== 'none' && admin[key as keyof AdminUser] && (
                         <Badge key={key} variant="secondary" className="text-xs">
                           {label}
                         </Badge>
@@ -498,9 +503,9 @@ const AdminAdmins: React.FC = () => {
                 <div key={key} className="flex items-center space-x-2">
                   <Checkbox
                     id={key}
-                    checked={formData[key as keyof typeof formData] as boolean}
+                    checked={formData[key as keyof typeof formData] !== 'none'}
                     onCheckedChange={(checked) => 
-                      setFormData({ ...formData, [key]: checked })
+                      setFormData({ ...formData, [key]: checked ? 'full' : 'none' })
                     }
                   />
                   <Label htmlFor={key} className="text-sm font-normal">
