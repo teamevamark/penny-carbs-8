@@ -243,14 +243,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     wardNumber: number
   ) => {
     try {
-      // Check if mobile already exists
+      // Check if mobile already exists in profiles
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, is_active, user_id')
         .eq('mobile_number', mobileNumber)
         .maybeSingle();
 
       if (existingProfile) {
+        if (!existingProfile.is_active) {
+          // Reactivate inactive/deleted profile
+          const { error: reactivateError } = await supabase
+            .from('profiles')
+            .update({
+              is_active: true,
+              name,
+              panchayat_id: panchayatId,
+              ward_number: wardNumber,
+            })
+            .eq('id', existingProfile.id);
+
+          if (reactivateError) {
+            console.error('Profile reactivation error:', reactivateError);
+            return { error: new Error('Failed to reactivate account. Please try again.') };
+          }
+
+          // Try to sign in with customer email pattern
+          const customerEmail = `${mobileNumber}@customer.pennycarbs.app`;
+          const customerPassword = `PC_CUSTOMER_${mobileNumber}`;
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: customerEmail,
+            password: customerPassword,
+          });
+
+          if (!signInError) {
+            return { error: null };
+          }
+
+          // Try legacy staff email pattern
+          const staffEmail = `${mobileNumber}@pennycarbs.app`;
+          const { error: staffSignInError } = await supabase.auth.signInWithPassword({
+            email: staffEmail,
+            password: customerPassword,
+          });
+
+          if (!staffSignInError) {
+            return { error: null };
+          }
+
+          return { error: null };
+        }
         return { error: new Error('An account with this mobile number already exists. Please login.') };
       }
 
@@ -268,6 +310,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (authError) {
+        // If user already exists in auth but not in profiles (orphaned auth account),
+        // try signing in instead
+        if (authError.message.includes('already registered') || authError.message.includes('already been registered')) {
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (signInError) {
+            // Try with staff email pattern
+            const staffEmail = `${mobileNumber}@pennycarbs.app`;
+            const { data: staffAuth, error: staffError } = await supabase.auth.signInWithPassword({
+              email: staffEmail,
+              password,
+            });
+
+            if (staffError) {
+              return { error: new Error('An account exists with this number but could not sign in automatically. Please use Staff Login or contact support.') };
+            }
+
+            // Create profile for this existing auth user if missing
+            if (staffAuth.user) {
+              await supabase.from('profiles').upsert({
+                user_id: staffAuth.user.id,
+                name,
+                mobile_number: mobileNumber,
+                panchayat_id: panchayatId,
+                ward_number: wardNumber,
+                is_active: true,
+              }, { onConflict: 'user_id' });
+            }
+
+            return { error: null };
+          }
+
+          // Sign in succeeded - ensure profile exists
+          const { data: { user: signedInUser } } = await supabase.auth.getUser();
+          if (signedInUser) {
+            await supabase.from('profiles').upsert({
+              user_id: signedInUser.id,
+              name,
+              mobile_number: mobileNumber,
+              panchayat_id: panchayatId,
+              ward_number: wardNumber,
+              is_active: true,
+            }, { onConflict: 'user_id' });
+          }
+
+          return { error: null };
+        }
         return { error: new Error(authError.message) };
       }
 
@@ -275,13 +367,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Create profile
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             user_id: authData.user.id,
             name,
             mobile_number: mobileNumber,
             panchayat_id: panchayatId,
             ward_number: wardNumber,
-          });
+            is_active: true,
+          }, { onConflict: 'user_id' });
 
         if (profileError) {
           console.error('Profile creation error:', profileError);
