@@ -120,7 +120,7 @@ const IndoorEventsPlanner: React.FC = () => {
   const initialCompletedSteps = new Set<string>();
   if (initialEventType) initialCompletedSteps.add('event-type');
   if (initialFoods.length > 0) initialCompletedSteps.add('food');
-  if (initialGuestCount !== 50) initialCompletedSteps.add('guests');
+  initialCompletedSteps.add('guests');
 
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(initialCompletedSteps);
