@@ -110,13 +110,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Convert mobile to email format for Supabase auth
       const email = `${mobileNumber}@pennycarbs.app`;
       
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
         return { error: new Error(error.message) };
+      }
+
+      // Check if the user has an active profile
+      if (authData.user) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('is_active')
+          .eq('user_id', authData.user.id)
+          .maybeSingle();
+
+        if (!profileData) {
+          await supabase.auth.signOut();
+          return { error: new Error('This account has been deleted. Please contact support.') };
+        }
+
+        if (!profileData.is_active) {
+          await supabase.auth.signOut();
+          return { error: new Error('This account has been deactivated. Please contact support.') };
+        }
       }
 
       return { error: null };
@@ -181,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if customer exists in profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('user_id')
+        .select('user_id, is_active')
         .eq('mobile_number', mobileNumber)
         .maybeSingle();
 
@@ -191,6 +210,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!profileData) {
         return { error: new Error('Customer not found. Please register first.') };
+      }
+
+      if (!profileData.is_active) {
+        return { error: new Error('This account has been deactivated. Please contact support.') };
       }
 
       // Check if user has a non-customer role (staff account)
