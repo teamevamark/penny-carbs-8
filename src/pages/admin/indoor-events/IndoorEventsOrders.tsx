@@ -110,6 +110,7 @@ const IndoorEventsOrders: React.FC = () => {
   const [cookSelectionOpen, setCookSelectionOpen] = useState(false);
   const [selectedCooks, setSelectedCooks] = useState<string[]>([]);
   const [dishCookAssignments, setDishCookAssignments] = useState<Map<string, string>>(new Map());
+  const [directCookId, setDirectCookId] = useState<string>('');
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false);
   const [vehicleDialogOrder, setVehicleDialogOrder] = useState<IndoorEventOrder | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -335,6 +336,40 @@ const IndoorEventsOrders: React.FC = () => {
     setCookSelectionOpen(true);
   };
 
+  // Direct cook assignment for orders without items (full_event orders)
+  const assignDirectCookMutation = useMutation({
+    mutationFn: async ({ orderId, cookId }: { orderId: string; cookId: string }) => {
+      // Remove existing order-level assignments
+      await supabase
+        .from('order_assigned_cooks')
+        .delete()
+        .eq('order_id', orderId);
+
+      // Insert new assignment
+      const { error: assignError } = await supabase
+        .from('order_assigned_cooks')
+        .insert({ order_id: orderId, cook_id: cookId, cook_status: 'pending' });
+      if (assignError) throw assignError;
+
+      // Update order with assigned cook and status
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({ assigned_cook_id: cookId, status: 'preparing', cook_assigned_at: new Date().toISOString(), cook_assignment_status: 'pending' })
+        .eq('id', orderId);
+      if (orderError) throw orderError;
+    },
+    onSuccess: () => {
+      toast({ title: 'Cook Assigned', description: 'Cook assigned and order marked as preparing' });
+      setCookSelectionOpen(false);
+      setDirectCookId('');
+      setSelectedOrder(null);
+      queryClient.invalidateQueries({ queryKey: ['indoor-events-orders'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Error', description: error.message || 'Failed to assign cook', variant: 'destructive' });
+    },
+  });
+
   const assignCooksMutation = useMutation({
     mutationFn: async ({ orderId, dishAssignments }: { orderId: string; dishAssignments: Map<string, string> }) => {
       // Update each order_item with its assigned cook
@@ -401,6 +436,17 @@ const IndoorEventsOrders: React.FC = () => {
 
   const handleAssignCooksAndPrepare = () => {
     if (!selectedOrder) return;
+
+    // If no items, use direct cook assignment
+    const hasNoItems = !selectedOrder.order_items || selectedOrder.order_items.length === 0;
+    if (hasNoItems) {
+      if (!directCookId) {
+        toast({ title: 'Select a cook', variant: 'destructive' });
+        return;
+      }
+      assignDirectCookMutation.mutate({ orderId: selectedOrder.id, cookId: directCookId });
+      return;
+    }
     
     // Check if at least one dish has a cook assigned
     if (dishCookAssignments.size === 0) {
@@ -770,10 +816,25 @@ const IndoorEventsOrders: React.FC = () => {
           <div className="space-y-4 py-4">
             {/* Show message if no order items */}
             {(!selectedOrder?.order_items || selectedOrder.order_items.length === 0) ? (
-              <div className="text-center py-6 text-muted-foreground">
-                <ChefHat className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p>No dishes in this order</p>
-                <p className="text-xs mt-1">Add dishes to the order before assigning cooks</p>
+              <div className="space-y-4">
+                <div className="text-center py-2 text-muted-foreground">
+                  <p className="text-sm">This order has no individual dishes. Assign a cook directly.</p>
+                </div>
+                <Select value={directCookId} onValueChange={setDirectCookId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a cook..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cooks?.filter(c => c.is_available).map((cook) => (
+                      <SelectItem key={cook.id} value={cook.id}>
+                        <span className="flex items-center gap-2">
+                          <ChefHat className="h-3 w-3" />
+                          {cook.kitchen_name} • {cook.panchayat?.name || 'N/A'}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ) : (
               <>
@@ -875,9 +936,12 @@ const IndoorEventsOrders: React.FC = () => {
             </Button>
             <Button
               onClick={handleAssignCooksAndPrepare}
-              disabled={dishCookAssignments.size === 0 || assignCooksMutation.isPending}
+              disabled={
+                ((!selectedOrder?.order_items || selectedOrder.order_items.length === 0) ? !directCookId : dishCookAssignments.size === 0)
+                || assignCooksMutation.isPending || assignDirectCookMutation.isPending
+              }
             >
-              {assignCooksMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {(assignCooksMutation.isPending || assignDirectCookMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Assign & Start Preparing
             </Button>
           </DialogFooter>
