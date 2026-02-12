@@ -187,6 +187,7 @@ export function useCustomerDivisionItems(divisionId: string | null) {
           id,
           cook_id,
           food_item_id,
+          custom_price,
           cooks!inner(
             id,
             kitchen_name,
@@ -220,11 +221,13 @@ export function useCustomerDivisionItems(divisionId: string | null) {
         if (cookAllocations.length > 0) {
           // Create an entry for each cook that offers this dish
           cookAllocations.forEach((cd: any) => {
+            // Use cook's custom price if set, otherwise fall back to base price
+            const effectivePrice = cd.custom_price != null ? cd.custom_price : item.price;
             result.push({
               id: item.id,
               name: item.name,
               description: item.description,
-              price: item.price,
+              price: effectivePrice,
               is_vegetarian: item.is_vegetarian,
               set_size: item.set_size || 1,
               min_order_sets: item.min_order_sets || 1,

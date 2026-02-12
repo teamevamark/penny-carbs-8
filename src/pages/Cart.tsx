@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDeliveryRules } from '@/hooks/useDeliveryRules';
+import { calculatePlatformMargin } from '@/lib/priceUtils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -121,7 +122,13 @@ const Cart: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium line-clamp-2">{item?.name}</h3>
                     <p className="mt-1 text-lg font-bold">
-                      ₹{(((cartItem as any).cook_custom_price ?? item?.price ?? 0) * cartItem.quantity).toFixed(0)}
+                      ₹{(() => {
+                        const effectiveBase = (cartItem as any).cook_custom_price ?? item?.price ?? 0;
+                        const marginType = ((item as any)?.platform_margin_type || 'percent') as 'percent' | 'fixed';
+                        const marginValue = (item as any)?.platform_margin_value || 0;
+                        const margin = calculatePlatformMargin(effectiveBase, marginType, marginValue);
+                        return ((effectiveBase + margin) * cartItem.quantity).toFixed(0);
+                      })()}
                     </p>
                     
                     {/* Quantity Controls */}

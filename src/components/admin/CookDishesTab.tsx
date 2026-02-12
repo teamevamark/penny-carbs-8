@@ -217,7 +217,12 @@ const CookDishesTab: React.FC<CookDishesTabProps> = ({ cooks, cooksLoading }) =>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          ₹{dish.food_item?.price} • {dish.food_item?.category?.name || 'Uncategorized'}
+                          {dish.custom_price != null ? (
+                            <>₹{dish.custom_price} <span className="line-through text-muted-foreground/50">₹{dish.food_item?.price}</span></>
+                          ) : (
+                            <>₹{dish.food_item?.price}</>
+                          )}
+                          {' • '}{dish.food_item?.category?.name || 'Uncategorized'}
                         </p>
                       </div>
                     </div>
