@@ -1,0 +1,1 @@
+ALTER TABLE public.food_items ALTER COLUMN is_available SET DEFAULT false;
