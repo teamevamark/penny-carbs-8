@@ -182,7 +182,9 @@ const OrderDetail: React.FC = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Delivery Status</p>
                   {(() => {
-                    const ds = deliveryStatusConfig[order.delivery_status] || { label: order.delivery_status, color: 'bg-muted text-muted-foreground', icon: <Truck className="h-4 w-4" /> };
+                    // If order is delivered, override delivery status display
+                    const effectiveDeliveryStatus = order.status === 'delivered' ? 'delivered' : order.delivery_status;
+                    const ds = deliveryStatusConfig[effectiveDeliveryStatus] || { label: effectiveDeliveryStatus, color: 'bg-muted text-muted-foreground', icon: <Truck className="h-4 w-4" /> };
                     return (
                       <Badge className={`mt-1 gap-1 ${ds.color}`}>
                         {ds.icon}
@@ -191,11 +193,22 @@ const OrderDetail: React.FC = () => {
                     );
                   })()}
                 </div>
-                {order.delivery_eta && (
+                {order.delivery_eta && order.status !== 'delivered' && (
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">ETA</p>
                     <p className="font-medium">
                       {new Date(order.delivery_eta).toLocaleTimeString('en-IN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  </div>
+                )}
+                {order.delivered_at && order.status === 'delivered' && (
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">Delivered At</p>
+                    <p className="font-medium">
+                      {new Date(order.delivered_at).toLocaleTimeString('en-IN', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -238,7 +251,9 @@ const OrderDetail: React.FC = () => {
             <div className="mt-4 flex justify-between border-t pt-3">
               <p className="font-semibold">Total</p>
               <p className="font-semibold text-primary">
-                ₹{orderItems.reduce((sum, item) => sum + getCustomerUnitPrice(item) * item.quantity, 0)}
+                ₹{orderItems.length > 0
+                  ? orderItems.reduce((sum, item) => sum + getCustomerUnitPrice(item) * item.quantity, 0)
+                  : order.total_amount}
               </p>
             </div>
           </CardContent>

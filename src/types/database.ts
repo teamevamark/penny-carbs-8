@@ -124,6 +124,7 @@ export interface Order {
   event_details: string | null;
   delivery_status: string | null;
   delivery_eta: string | null;
+  delivered_at: string | null;
   cook_status: string | null;
   created_at: string;
   updated_at: string;
