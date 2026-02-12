@@ -278,6 +278,8 @@ const ItemDetail: React.FC = () => {
             selectedCookId={selectedCookId}
             onSelectCook={setSelectedCookId}
             basePrice={item.price}
+            platformMarginType={(item as any).platform_margin_type || 'percent'}
+            platformMarginValue={(item as any).platform_margin_value || 0}
           />
         )}
 
