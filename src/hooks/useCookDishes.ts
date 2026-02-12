@@ -218,7 +218,7 @@ export function useReviewDishRequest() {
             is_vegetarian: request.dish_is_vegetarian || false,
             category_id: request.dish_category_id,
             service_type: 'indoor_events', // Default, admin can change later
-            is_available: true,
+            is_available: false,
           })
           .select('id')
           .single();
