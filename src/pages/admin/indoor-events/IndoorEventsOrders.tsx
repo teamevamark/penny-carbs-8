@@ -354,7 +354,7 @@ const IndoorEventsOrders: React.FC = () => {
       // Update order with assigned cook and status
       const { error: orderError } = await supabase
         .from('orders')
-        .update({ assigned_cook_id: cookId, status: 'preparing', cook_assigned_at: new Date().toISOString(), cook_assignment_status: 'pending' })
+        .update({ status: 'preparing', cook_assigned_at: new Date().toISOString(), cook_assignment_status: 'pending' })
         .eq('id', orderId);
       if (orderError) throw orderError;
     },
