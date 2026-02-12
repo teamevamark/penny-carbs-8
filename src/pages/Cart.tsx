@@ -121,7 +121,7 @@ const Cart: React.FC = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium line-clamp-2">{item?.name}</h3>
                     <p className="mt-1 text-lg font-bold">
-                      ₹{((item?.price || 0) * cartItem.quantity).toFixed(0)}
+                      ₹{(((cartItem as any).cook_custom_price ?? item?.price ?? 0) * cartItem.quantity).toFixed(0)}
                     </p>
                     
                     {/* Quantity Controls */}
