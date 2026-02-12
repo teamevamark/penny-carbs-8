@@ -31,9 +31,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Phone, User, Shield } from 'lucide-react';
+import { Loader2, Phone, User, Shield, MapPin } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import logo from '@/assets/logo.png';
+import { AlertDialog, AlertDialogContent } from '@/components/ui/alert-dialog';
 
 const loginSchema = z.object({
   mobileNumber: z
@@ -109,6 +110,23 @@ const CustomerLoginDialog: React.FC<CustomerLoginDialogProps> = ({
   const handleLogin = async (data: LoginFormData) => {
     setIsSubmitting(true);
     try {
+      // Check if this customer's panchayat is active before login
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('panchayat_id')
+        .eq('mobile_number', data.mobileNumber)
+        .maybeSingle();
+
+      if (profileData?.panchayat_id) {
+        // If the panchayat is not in our active list, it's inactive
+        const isActive = panchayats.some(p => p.id === profileData.panchayat_id);
+        if (!isActive) {
+          setShowInactivePanchayat(true);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const { error } = await customerSignIn(data.mobileNumber);
       if (error) {
         if (error.message.includes('not found')) {
@@ -136,7 +154,16 @@ const CustomerLoginDialog: React.FC<CustomerLoginDialogProps> = ({
     }
   };
 
+  const [showInactivePanchayat, setShowInactivePanchayat] = useState(false);
+
   const handleSignup = async (data: SignupFormData) => {
+    // Check if selected panchayat is active
+    const selected = panchayats.find(p => p.id === data.panchayatId);
+    if (selected && !selected.is_active) {
+      setShowInactivePanchayat(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { error } = await customerSignUp(
@@ -240,6 +267,7 @@ const CustomerLoginDialog: React.FC<CustomerLoginDialogProps> = ({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center">
@@ -416,6 +444,30 @@ const CustomerLoginDialog: React.FC<CustomerLoginDialogProps> = ({
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* Inactive Panchayat Popup */}
+    <AlertDialog open={showInactivePanchayat} onOpenChange={setShowInactivePanchayat}>
+      <AlertDialogContent className="max-w-sm text-center border-none bg-gradient-to-b from-primary to-primary/90 text-primary-foreground p-8 rounded-2xl">
+        <div className="flex flex-col items-center gap-4">
+          <img src={logo} alt="Penny Carbs" className="h-16 w-auto" />
+          <div className="h-16 w-16 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+            <MapPin className="h-8 w-8 text-primary-foreground" />
+          </div>
+          <h2 className="text-xl font-bold">Your Panchayath Not Started!</h2>
+          <p className="text-primary-foreground/80 text-sm">
+            We Will Be Coming Soon to your area. Stay tuned!
+          </p>
+          <Button
+            variant="secondary"
+            className="w-full mt-2"
+            onClick={() => setShowInactivePanchayat(false)}
+          >
+            OK, Got It
+          </Button>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
 

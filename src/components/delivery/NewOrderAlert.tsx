@@ -35,14 +35,14 @@ const NewOrderAlert: React.FC<NewOrderAlertProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onDismiss()}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto border-primary/30">
+        <DialogHeader className="bg-gradient-to-r from-primary/10 to-primary/5 -mx-6 -mt-6 px-6 pt-6 pb-4 rounded-t-lg">
           <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center animate-pulse">
-              <Package className="h-4 w-4 text-primary" />
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center animate-pulse">
+              <Package className="h-4 w-4 text-primary-foreground" />
             </div>
             New Delivery Orders!
-            <Badge variant="destructive" className="ml-auto">
+            <Badge className="ml-auto bg-primary text-primary-foreground">
               {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
             </Badge>
           </DialogTitle>

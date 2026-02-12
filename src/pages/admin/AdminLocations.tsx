@@ -120,6 +120,21 @@ const AdminLocations: React.FC = () => {
     }
   };
 
+  const handleToggleActive = async (panchayat: Panchayat, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('panchayats')
+        .update({ is_active: checked })
+        .eq('id', panchayat.id);
+
+      if (error) throw error;
+      toast({ title: checked ? 'Panchayat activated' : 'Panchayat deactivated' });
+      fetchData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handleDeletePanchayat = async (panchayat: Panchayat) => {
     if (!confirm(`Delete "${panchayat.name}"?`)) return;
 
@@ -197,6 +212,10 @@ const AdminLocations: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Switch
+                      checked={panchayat.is_active}
+                      onCheckedChange={(checked) => handleToggleActive(panchayat, checked)}
+                    />
                     <Badge variant={panchayat.is_active ? 'default' : 'secondary'}>
                       {panchayat.is_active ? 'Active' : 'Inactive'}
                     </Badge>
