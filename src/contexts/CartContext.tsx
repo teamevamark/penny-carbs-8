@@ -7,6 +7,7 @@ import { calculatePlatformMargin } from '@/lib/priceUtils';
 
 interface CartItemWithCook extends CartItem {
   selected_cook_id?: string | null;
+  cook_custom_price?: number | null;
 }
 
 interface CartContextType {
@@ -60,7 +61,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const cartItems: CartItemWithCook[] = (data || []).map(item => ({
+      let cartItems: CartItemWithCook[] = (data || []).map(item => ({
         id: item.id,
         user_id: item.user_id,
         food_item_id: item.food_item_id,
@@ -69,7 +70,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated_at: item.updated_at,
         food_item: item.food_item as FoodItemWithImages,
         selected_cook_id: item.selected_cook_id,
+        cook_custom_price: null,
       }));
+
+      // Fetch cook custom prices for items with selected_cook_id
+      const itemsWithCook = cartItems.filter(ci => ci.selected_cook_id);
+      if (itemsWithCook.length > 0) {
+        const cookIds = [...new Set(itemsWithCook.map(ci => ci.selected_cook_id!))];
+        const foodItemIds = [...new Set(itemsWithCook.map(ci => ci.food_item_id))];
+        const { data: cookDishes } = await supabase
+          .from('cook_dishes')
+          .select('cook_id, food_item_id, custom_price')
+          .in('cook_id', cookIds)
+          .in('food_item_id', foodItemIds);
+
+        if (cookDishes) {
+          const priceMap = new Map<string, number | null>();
+          cookDishes.forEach(cd => {
+            priceMap.set(`${cd.cook_id}_${cd.food_item_id}`, cd.custom_price);
+          });
+          cartItems = cartItems.map(ci => ({
+            ...ci,
+            cook_custom_price: ci.selected_cook_id
+              ? priceMap.get(`${ci.selected_cook_id}_${ci.food_item_id}`) ?? null
+              : null,
+          }));
+        }
+      }
 
       setItems(cartItems);
     } catch (error) {
@@ -227,11 +254,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   
   const totalAmount = items.reduce((sum, item) => {
-    const basePrice = item.food_item?.price || 0;
+    // Use cook's custom price if available, otherwise base price
+    const effectiveBasePrice = item.cook_custom_price ?? item.food_item?.price ?? 0;
     const marginType = (item.food_item?.platform_margin_type || 'percent') as 'percent' | 'fixed';
     const marginValue = item.food_item?.platform_margin_value || 0;
-    const margin = calculatePlatformMargin(basePrice, marginType, marginValue);
-    const customerPrice = basePrice + margin;
+    const margin = calculatePlatformMargin(effectiveBasePrice, marginType, marginValue);
+    const customerPrice = effectiveBasePrice + margin;
     return sum + (customerPrice * item.quantity);
   }, 0);
 

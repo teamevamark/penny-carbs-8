@@ -14,13 +14,14 @@ import { toast } from '@/hooks/use-toast';
 import AddressSelector from '@/components/customer/AddressSelector';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 
-// Helper to get customer price (base + margin)
-const getCustomerPrice = (foodItem: any): number => {
+// Helper to get customer price (base + margin), considering cook custom price
+const getCustomerPrice = (foodItem: any, cookCustomPrice?: number | null): number => {
   if (!foodItem) return 0;
+  const effectiveBase = cookCustomPrice ?? foodItem.price;
   const marginType = (foodItem.platform_margin_type || 'percent') as 'percent' | 'fixed';
   const marginValue = foodItem.platform_margin_value || 0;
-  const margin = calculatePlatformMargin(foodItem.price, marginType, marginValue);
-  return foodItem.price + margin;
+  const margin = calculatePlatformMargin(effectiveBase, marginType, marginValue);
+  return effectiveBase + margin;
 };
 
 const Checkout: React.FC = () => {
@@ -136,7 +137,7 @@ const Checkout: React.FC = () => {
 
       // Create order items with customer price (base + platform margin)
       const orderItems = items.map(item => {
-        const customerPrice = getCustomerPrice(item.food_item);
+        const customerPrice = getCustomerPrice(item.food_item, (item as any).cook_custom_price);
         return {
           order_id: order.id,
           food_item_id: item.food_item_id,
@@ -296,7 +297,7 @@ const Checkout: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-3">
             {items.map((item) => {
-              const customerPrice = getCustomerPrice(item.food_item);
+              const customerPrice = getCustomerPrice(item.food_item, (item as any).cook_custom_price);
               return (
                 <div key={item.id} className="flex justify-between text-sm">
                   <span>
