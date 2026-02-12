@@ -61,19 +61,22 @@ const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSe
                       <span className="font-bold text-primary">₹{displayPrice.toFixed(0)}</span>
                     )}
                   </div>
-                  {(cook.rating || cook.total_orders) && (
-                    <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
-                      {cook.rating && cook.rating > 0 && (
-                        <span className="flex items-center gap-1">
-                          <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                          {cook.rating.toFixed(1)}
-                        </span>
-                      )}
-                      {cook.total_orders && cook.total_orders > 0 && (
-                        <span>{cook.total_orders} orders</span>
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
+                    {cook.rating != null && cook.rating > 0 ? (
+                      <span className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                        {cook.rating.toFixed(1)}
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-muted-foreground/60">
+                        <Star className="h-3 w-3" />
+                        No ratings
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      🛒 {cook.total_orders ?? 0} orders
+                    </span>
+                  </div>
                 </Label>
               </div>
             );
