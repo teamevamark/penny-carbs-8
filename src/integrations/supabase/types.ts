@@ -1127,6 +1127,74 @@ export type Database = {
           },
         ]
       }
+      order_ratings: {
+        Row: {
+          cook_id: string | null
+          created_at: string
+          customer_id: string
+          food_item_id: string
+          id: string
+          order_id: string
+          order_item_id: string
+          rating: number
+          review_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          cook_id?: string | null
+          created_at?: string
+          customer_id: string
+          food_item_id: string
+          id?: string
+          order_id: string
+          order_item_id: string
+          rating: number
+          review_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cook_id?: string | null
+          created_at?: string
+          customer_id?: string
+          food_item_id?: string
+          id?: string
+          order_id?: string
+          order_item_id?: string
+          rating?: number
+          review_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_ratings_cook_id_fkey"
+            columns: ["cook_id"]
+            isOneToOne: false
+            referencedRelation: "cooks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_ratings_food_item_id_fkey"
+            columns: ["food_item_id"]
+            isOneToOne: false
+            referencedRelation: "food_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_ratings_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_ratings_order_item_id_fkey"
+            columns: ["order_item_id"]
+            isOneToOne: false
+            referencedRelation: "order_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           advance_payment_received: boolean | null
