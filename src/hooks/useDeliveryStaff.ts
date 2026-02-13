@@ -356,15 +356,9 @@ export function useAcceptDelivery() {
     mutationFn: async (orderId: string) => {
       if (!user?.id) throw new Error('Not authenticated');
 
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          assigned_delivery_id: user.id,
-          delivery_status: 'assigned',
-          delivery_eta: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour from now
-        })
-        .eq('id', orderId)
-        .is('assigned_delivery_id', null);
+      const { error } = await supabase.rpc('accept_delivery_order', {
+        p_order_id: orderId,
+      });
 
       if (error) throw error;
     },

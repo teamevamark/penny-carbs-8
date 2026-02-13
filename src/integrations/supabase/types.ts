@@ -1764,6 +1764,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_delivery_order: {
+        Args: { p_order_id: string }
+        Returns: undefined
+      }
       generate_referral_code: { Args: { user_uuid: string }; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
