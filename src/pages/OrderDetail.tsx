@@ -10,9 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Truck, MapPin, Phone } from 'lucide-react';
 import BottomNav from '@/components/customer/BottomNav';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
+import OrderRating from '@/components/customer/OrderRating';
 
 interface OrderItemWithFood extends OrderItem {
   food_item: FoodItem;
+  assigned_cook_id: string | null;
 }
 
 // Get the customer-facing price (base + platform margin)
@@ -299,6 +301,20 @@ const OrderDetail: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Rating Section for Delivered Orders */}
+        {order.status === 'delivered' && user && orderItems.length > 0 && (
+          <OrderRating
+            orderId={order.id}
+            customerId={user.id}
+            orderItems={orderItems.map(oi => ({
+              id: oi.id,
+              food_item_id: oi.food_item_id,
+              assigned_cook_id: oi.assigned_cook_id,
+              food_item: { name: oi.food_item?.name || 'Item' },
+            }))}
+          />
         )}
       </main>
 
