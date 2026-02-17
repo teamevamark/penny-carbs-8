@@ -113,7 +113,7 @@ const SetItemCard: React.FC<SetItemCardProps> = ({
                 <span>
                   {totalSelected > 0
                     ? `${totalSelected} set${totalSelected > 1 ? 's' : ''} selected`
-                    : 'Choose Kitchen'}
+                    : 'Choose Kitchen (ഇഷ്ട്ടപെട്ട അടുക്കള തിരഞ്ഞെടുക്കാം..)'}
                 </span>
                 <ChevronDown className={`h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`} />
               </Button>
