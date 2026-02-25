@@ -13,6 +13,7 @@ export interface CustomerCloudKitchenItem {
   description: string | null;
   price: number;
   is_vegetarian: boolean;
+  is_coming_soon: boolean;
   set_size: number;
   min_order_sets: number;
   cloud_kitchen_slot_id: string | null;
@@ -23,11 +24,8 @@ export interface CustomerCloudKitchenItem {
     image_url: string;
     is_primary: boolean;
   }[];
-  // Cook info for this specific dish-cook combination (null if no cook allocated)
   cook: CookInfo | null;
-  // Unique key combining food item and cook
   unique_key: string;
-  // Whether this item can be ordered (has an active cook)
   is_orderable: boolean;
 }
 
@@ -168,6 +166,7 @@ export function useCustomerDivisionItems(divisionId: string | null) {
           description,
           price,
           is_vegetarian,
+          is_coming_soon,
           set_size,
           min_order_sets,
           cloud_kitchen_slot_id,
@@ -229,6 +228,7 @@ export function useCustomerDivisionItems(divisionId: string | null) {
               description: item.description,
               price: effectivePrice,
               is_vegetarian: item.is_vegetarian,
+              is_coming_soon: item.is_coming_soon || false,
               set_size: item.set_size || 1,
               min_order_sets: item.min_order_sets || 1,
               cloud_kitchen_slot_id: item.cloud_kitchen_slot_id,
@@ -241,7 +241,7 @@ export function useCustomerDivisionItems(divisionId: string | null) {
                 rating: cd.cooks.rating,
               },
               unique_key: `${item.id}_${cd.cooks.id}`,
-              is_orderable: true,
+              is_orderable: !item.is_coming_soon,
             });
           });
         } else {
@@ -252,6 +252,7 @@ export function useCustomerDivisionItems(divisionId: string | null) {
             description: item.description,
             price: item.price,
             is_vegetarian: item.is_vegetarian,
+            is_coming_soon: item.is_coming_soon || false,
             set_size: item.set_size || 1,
             min_order_sets: item.min_order_sets || 1,
             cloud_kitchen_slot_id: item.cloud_kitchen_slot_id,

@@ -53,6 +53,7 @@ const CloudKitchenOrder: React.FC = () => {
           name: item.name,
           description: item.description,
           is_vegetarian: item.is_vegetarian,
+          is_coming_soon: item.is_coming_soon || false,
           set_size: item.set_size,
           min_order_sets: item.min_order_sets,
           images: item.images,

@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Plus, Trash2, Edit2, Leaf } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Edit2, Leaf, Clock } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { formatSlotTime } from '@/hooks/useCloudKitchenSlots';
 import {
   useCloudKitchenItems,
@@ -27,6 +28,7 @@ import {
   useAssignItemToDivision,
   useUpdateItemSet,
   useRemoveItemFromDivision,
+  useToggleItemComingSoon,
   type CloudKitchenItem,
 } from '@/hooks/useCloudKitchenItems';
 import type { Division } from '@/hooks/useCloudKitchenDivisions';
@@ -51,6 +53,7 @@ const DivisionItemsManager: React.FC<DivisionItemsManagerProps> = ({
   const assignItem = useAssignItemToDivision();
   const updateItemSet = useUpdateItemSet();
   const removeItem = useRemoveItemFromDivision();
+  const toggleComingSoon = useToggleItemComingSoon();
 
   // Filter out items already assigned to this division
   const unassignedItems = availableItems?.filter(
@@ -125,6 +128,7 @@ const DivisionItemsManager: React.FC<DivisionItemsManagerProps> = ({
                   <TableHead>Set Size</TableHead>
                   <TableHead>Min Sets</TableHead>
                   <TableHead>Total Min Qty</TableHead>
+                  <TableHead>Coming Soon</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -132,13 +136,19 @@ const DivisionItemsManager: React.FC<DivisionItemsManagerProps> = ({
                 {items?.map((item) => {
                   const totalMinQty = (item.set_size || 1) * (item.min_order_sets || 1);
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className={item.is_coming_soon ? 'bg-muted/40' : ''}>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {item.is_vegetarian && (
                             <Leaf className="h-4 w-4 text-green-600" />
                           )}
                           <span className="font-medium">{item.name}</span>
+                          {item.is_coming_soon && (
+                            <Badge variant="secondary" className="text-xs">
+                              <Clock className="h-3 w-3 mr-1" />
+                              Coming Soon
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>₹{item.price}</TableCell>
@@ -150,6 +160,15 @@ const DivisionItemsManager: React.FC<DivisionItemsManagerProps> = ({
                       </TableCell>
                       <TableCell>
                         <span className="font-semibold">{totalMinQty} pcs</span>
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={item.is_coming_soon}
+                          onCheckedChange={(checked) =>
+                            toggleComingSoon.mutate({ itemId: item.id, isComingSoon: checked })
+                          }
+                          disabled={toggleComingSoon.isPending}
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">

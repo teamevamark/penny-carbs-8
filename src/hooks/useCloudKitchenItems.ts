@@ -9,6 +9,7 @@ export interface CloudKitchenItem {
   price: number;
   is_vegetarian: boolean;
   is_available: boolean;
+  is_coming_soon: boolean;
   set_size: number;
   min_order_sets: number;
   cloud_kitchen_slot_id: string | null;
@@ -34,6 +35,7 @@ export function useCloudKitchenItems(slotId: string | null) {
           price,
           is_vegetarian,
           is_available,
+          is_coming_soon,
           set_size,
           min_order_sets,
           cloud_kitchen_slot_id,
@@ -62,6 +64,7 @@ export function useAvailableItems() {
           price,
           is_vegetarian,
           is_available,
+          is_coming_soon,
           set_size,
           min_order_sets,
           cloud_kitchen_slot_id,
@@ -145,6 +148,33 @@ export function useUpdateItemSet() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cloud-kitchen-items'] });
+      toast({ title: 'Item updated successfully' });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Failed to update item',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useToggleItemComingSoon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ itemId, isComingSoon }: { itemId: string; isComingSoon: boolean }) => {
+      const { error } = await supabase
+        .from('food_items')
+        .update({ is_coming_soon: isComingSoon })
+        .eq('id', itemId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cloud-kitchen-items'] });
+      queryClient.invalidateQueries({ queryKey: ['customer-division-items-with-cooks'] });
       toast({ title: 'Item updated successfully' });
     },
     onError: (error) => {

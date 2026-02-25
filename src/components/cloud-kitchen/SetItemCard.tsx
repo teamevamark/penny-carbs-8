@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Leaf, Plus, Minus, ChefHat, Star, ChevronDown } from 'lucide-react';
+import { Leaf, Plus, Minus, ChefHat, Star, ChevronDown, Clock } from 'lucide-react';
 import type { CustomerCloudKitchenItem } from '@/hooks/useCustomerCloudKitchen';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 
@@ -18,11 +18,12 @@ export interface GroupedFoodItem {
   name: string;
   description: string | null;
   is_vegetarian: boolean;
+  is_coming_soon: boolean;
   set_size: number;
   min_order_sets: number;
   images: { id: string; image_url: string; is_primary: boolean }[];
-  cooks: CustomerCloudKitchenItem[]; // All cook variants for this item
-  hasNoCook: boolean; // True if no cook is allocated
+  cooks: CustomerCloudKitchenItem[];
+  hasNoCook: boolean;
 }
 
 interface CartItem {
@@ -57,7 +58,7 @@ const SetItemCard: React.FC<SetItemCardProps> = ({
   const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
 
   return (
-    <Card className={`overflow-hidden ${group.hasNoCook ? 'opacity-60' : ''}`}>
+    <Card className={`overflow-hidden ${group.hasNoCook || group.is_coming_soon ? 'opacity-60' : ''}`}>
       {/* Main item row */}
       <div className="flex">
         <div className="w-28 h-32 bg-muted flex-shrink-0 relative">
@@ -66,9 +67,13 @@ const SetItemCard: React.FC<SetItemCardProps> = ({
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">No image</div>
           )}
-          {group.hasNoCook && (
+          {(group.hasNoCook || group.is_coming_soon) && (
             <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-              <Badge variant="secondary" className="text-xs">Coming Soon</Badge>
+              <Badge variant="secondary" className="text-xs">
+                {group.is_coming_soon ? (
+                  <><Clock className="h-3 w-3 mr-1" />Coming Soon</>
+                ) : 'Coming Soon'}
+              </Badge>
             </div>
           )}
         </div>
@@ -102,7 +107,7 @@ const SetItemCard: React.FC<SetItemCardProps> = ({
           </div>
 
           {/* Expand/collapse cooks */}
-          {orderableCooks.length > 0 && (
+          {orderableCooks.length > 0 && !group.is_coming_soon && (
             <div className="mt-2">
               <Button
                 variant="outline"
@@ -120,9 +125,9 @@ const SetItemCard: React.FC<SetItemCardProps> = ({
             </div>
           )}
 
-          {group.hasNoCook && (
+          {(group.hasNoCook || group.is_coming_soon) && (
             <Badge variant="outline" className="text-xs text-muted-foreground mt-2">
-              Not available for order
+              {group.is_coming_soon ? 'Coming soon - not available for order yet' : 'Not available for order'}
             </Badge>
           )}
         </CardContent>
