@@ -153,8 +153,8 @@ const Checkout: React.FC = () => {
 
       if (itemsError) throw itemsError;
 
-      // For homemade orders, assign cooks based on customer selection from cart
-      if (isHomemade) {
+      // Assign cooks for homemade and cloud_kitchen orders
+      if (isHomemade || serviceType === 'cloud_kitchen') {
         // Use cart items from context which already have selected_cook_id
         const cartCookMap = new Map<string, string>();
         items.forEach((item) => {
