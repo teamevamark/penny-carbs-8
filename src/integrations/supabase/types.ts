@@ -448,6 +448,38 @@ export type Database = {
           },
         ]
       }
+      cook_dish_features: {
+        Row: {
+          cook_dish_id: string
+          created_at: string
+          display_order: number
+          feature_text: string
+          id: string
+        }
+        Insert: {
+          cook_dish_id: string
+          created_at?: string
+          display_order?: number
+          feature_text: string
+          id?: string
+        }
+        Update: {
+          cook_dish_id?: string
+          created_at?: string
+          display_order?: number
+          feature_text?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cook_dish_features_cook_dish_id_fkey"
+            columns: ["cook_dish_id"]
+            isOneToOne: false
+            referencedRelation: "cook_dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cook_dish_requests: {
         Row: {
           admin_notes: string | null
