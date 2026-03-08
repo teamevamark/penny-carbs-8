@@ -52,6 +52,8 @@ const OrderDetail: React.FC = () => {
   const [orderItems, setOrderItems] = useState<OrderItemWithFood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [cooksMap, setCooksMap] = useState<Record<string, CookInfo>>({});
+
   useEffect(() => {
     const fetchOrderDetails = async () => {
       if (!user || !orderId) {
