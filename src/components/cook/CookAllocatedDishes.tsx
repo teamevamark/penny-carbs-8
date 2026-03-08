@@ -111,6 +111,7 @@ const CookAllocatedDishes: React.FC = () => {
                         />
                         <span className="text-[10px] text-muted-foreground">Coming Soon</span>
                       </div>
+                      <DishFeaturesManager cookDishId={dish.id} />
                     </div>
                   </div>
 
