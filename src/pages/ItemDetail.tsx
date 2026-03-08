@@ -57,6 +57,7 @@ const ItemDetail: React.FC = () => {
           const { data: cookDishes, error: cooksError } = await supabase
             .from('cook_dishes')
             .select(`
+              id,
               cook_id,
               custom_price,
               cooks!inner(id, kitchen_name, rating, total_orders, is_active, is_available)
@@ -64,6 +65,23 @@ const ItemDetail: React.FC = () => {
             .eq('food_item_id', itemId);
 
           if (!cooksError && cookDishes) {
+            // Fetch features for all cook_dish ids
+            const cookDishIds = cookDishes.map((cd: any) => cd.id);
+            let featuresMap: Record<string, string[]> = {};
+            if (cookDishIds.length > 0) {
+              const { data: featuresData } = await supabase
+                .from('cook_dish_features')
+                .select('cook_dish_id, feature_text')
+                .in('cook_dish_id', cookDishIds)
+                .order('display_order');
+              if (featuresData) {
+                featuresData.forEach((f: any) => {
+                  if (!featuresMap[f.cook_dish_id]) featuresMap[f.cook_dish_id] = [];
+                  featuresMap[f.cook_dish_id].push(f.feature_text);
+                });
+              }
+            }
+
             const activeCooks = cookDishes
               .filter((cd: any) => cd.cooks?.is_active && cd.cooks?.is_available)
               .map((cd: any) => ({
@@ -72,20 +90,11 @@ const ItemDetail: React.FC = () => {
                 rating: cd.cooks.rating,
                 total_orders: cd.cooks.total_orders,
                 custom_price: cd.custom_price as number | null,
+                features: featuresMap[cd.id] || [],
               }));
             setAvailableCooks(activeCooks);
-            // Auto-select the lowest price cook
             if (activeCooks.length === 1) {
               setSelectedCookId(activeCooks[0].cook_id);
-            } else if (activeCooks.length > 1) {
-              // Sort by price (custom_price or base price) and auto-select lowest
-              const basePrice = data.price;
-              const sorted = [...activeCooks].sort((a, b) => {
-                const priceA = a.custom_price ?? basePrice;
-                const priceB = b.custom_price ?? basePrice;
-                return priceA - priceB;
-              });
-              // Don't auto-select, but we'll use lowest price for display
             }
           }
         }

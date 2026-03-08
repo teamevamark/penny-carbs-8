@@ -1,7 +1,8 @@
 import React from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ChefHat, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ChefHat, Star, Sparkles } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 
 export interface CookOption {
@@ -10,6 +11,7 @@ export interface CookOption {
   rating: number | null;
   total_orders: number | null;
   custom_price: number | null;
+  features?: string[];
 }
 
 interface CookSelectorProps {
@@ -77,6 +79,16 @@ const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSe
                       🛒 {cook.total_orders ?? 0} orders
                     </span>
                   </div>
+                  {cook.features && cook.features.length > 0 && (
+                    <div className="mt-1.5 flex flex-wrap gap-1">
+                      {cook.features.map((feature, idx) => (
+                        <Badge key={idx} variant="outline" className="text-[10px] px-1.5 py-0 gap-0.5 border-amber-300 text-amber-700 bg-amber-50">
+                          <Sparkles className="h-2.5 w-2.5" />
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </Label>
               </div>
             );
