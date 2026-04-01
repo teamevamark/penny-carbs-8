@@ -67,7 +67,7 @@ const ServiceCards: React.FC = () => {
         What are you looking for?
       </h2>
       <div className="grid gap-4 sm:grid-cols-3">
-        {services.map((service) => (
+        {filteredServices.map((service) => (
           <Card
             key={service.id}
             className={`cursor-pointer overflow-hidden bg-gradient-to-br ${service.bgGradient} transition-all hover:scale-[1.02] hover:shadow-lg`}
