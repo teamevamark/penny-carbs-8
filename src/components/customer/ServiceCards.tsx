@@ -43,9 +43,13 @@ const services: ServiceCardData[] = [
 
 const ServiceCards: React.FC = () => {
   const navigate = useNavigate();
+  const { data: activeTypes } = useActiveServiceTypes();
+
+  const filteredServices = activeTypes
+    ? services.filter((s) => activeTypes.includes(s.id))
+    : services;
 
   const handleServiceClick = (serviceType: ServiceType) => {
-    // Each service has its own booking flow
     if (serviceType === 'indoor_events') {
       navigate('/indoor-events');
     } else if (serviceType === 'cloud_kitchen') {
@@ -54,6 +58,8 @@ const ServiceCards: React.FC = () => {
       navigate('/homemade');
     }
   };
+
+  if (filteredServices.length === 0) return null;
 
   return (
     <section className="px-4 py-6 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 dark:from-orange-950/30 dark:via-amber-950/20 dark:to-yellow-950/10">
