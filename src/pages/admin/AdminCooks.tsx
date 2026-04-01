@@ -724,6 +724,11 @@ const AdminCooks: React.FC = () => {
                             <p className="text-sm text-muted-foreground flex items-center gap-1">
                               <MapPin className="h-3 w-3" />
                               {cook.panchayat.name}
+                              {(cook as any).assigned_panchayat_ids?.length > 1 && (
+                                <Badge variant="outline" className="text-xs ml-1">
+                                  +{(cook as any).assigned_panchayat_ids.length - 1} more
+                                </Badge>
+                              )}
                             </p>
                           )}
                         </div>
