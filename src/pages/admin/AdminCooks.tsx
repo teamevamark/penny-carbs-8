@@ -40,7 +40,8 @@ const cookSchema = z.object({
     .min(10, 'Mobile number must be 10 digits')
     .max(10, 'Mobile number must be 10 digits')
     .regex(/^\d+$/, 'Mobile number must contain only digits'),
-  panchayatId: z.string().min(1, 'Please select a panchayat'),
+  panchayatId: z.string().min(1, 'Please select a primary panchayat'),
+  assignedPanchayatIds: z.array(z.string()).min(1, 'Select at least one panchayat'),
   allowedOrderTypes: z.array(z.string()).min(1, 'Select at least one order type'),
   userId: z.string().min(1, 'Please select a staff member first'),
 });
