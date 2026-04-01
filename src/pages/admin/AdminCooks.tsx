@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, ChefHat, Phone, MapPin, Loader2, Calendar, Users, Search, User, CheckCircle, UtensilsCrossed, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Plus, ChefHat, Phone, MapPin, Loader2, Calendar, Users, Search, User, CheckCircle, UtensilsCrossed, MessageSquare, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Cook } from '@/types/cook';
 import CookDishesTab from '@/components/admin/CookDishesTab';
@@ -84,6 +84,19 @@ const AdminCooks: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState('cooks');
+  
+  // Edit cook state
+  const [editCook, setEditCook] = useState<Cook | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState({
+    kitchen_name: '',
+    mobile_number: '',
+    panchayat_id: '',
+    assigned_panchayat_ids: [] as string[],
+    allowed_order_types: [] as string[],
+    is_active: true,
+  });
   
   // Staff search state
   const [searchMobile, setSearchMobile] = useState('');
@@ -361,6 +374,48 @@ const AdminCooks: React.FC = () => {
         description: "Failed to update status",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleOpenEdit = (cook: Cook) => {
+    setEditCook(cook);
+    setEditForm({
+      kitchen_name: cook.kitchen_name,
+      mobile_number: cook.mobile_number,
+      panchayat_id: cook.panchayat_id || '',
+      assigned_panchayat_ids: cook.assigned_panchayat_ids || [],
+      allowed_order_types: cook.allowed_order_types || [],
+      is_active: cook.is_active,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editCook) return;
+    setIsEditSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('cooks')
+        .update({
+          kitchen_name: editForm.kitchen_name,
+          mobile_number: editForm.mobile_number,
+          panchayat_id: editForm.panchayat_id || null,
+          assigned_panchayat_ids: editForm.assigned_panchayat_ids,
+          allowed_order_types: editForm.allowed_order_types,
+          is_active: editForm.is_active,
+        })
+        .eq('id', editCook.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Cook Updated', description: `${editForm.kitchen_name} updated successfully` });
+      setIsEditDialogOpen(false);
+      setEditCook(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-cooks'] });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || 'Failed to update cook', variant: 'destructive' });
+    } finally {
+      setIsEditSubmitting(false);
     }
   };
 
@@ -750,16 +805,29 @@ const AdminCooks: React.FC = () => {
                       <p className="text-sm text-muted-foreground">
                         ⭐ {cook.rating?.toFixed(1) || '0.0'} • {cook.total_orders || 0} orders
                       </p>
-                      <Button
-                        size="sm"
-                        variant={cook.is_active ? "destructive" : "default"}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleCookStatus(cook.id, cook.is_active);
-                        }}
-                      >
-                        {cook.is_active ? "Deactivate" : "Activate"}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(cook);
+                          }}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={cook.is_active ? "destructive" : "default"}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleCookStatus(cook.id, cook.is_active);
+                          }}
+                        >
+                          {cook.is_active ? "Deactivate" : "Activate"}
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -811,6 +879,118 @@ const AdminCooks: React.FC = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Edit Cook Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) setEditCook(null); }}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Edit Cook
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Kitchen Name</label>
+                <Input
+                  value={editForm.kitchen_name}
+                  onChange={(e) => setEditForm({ ...editForm, kitchen_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mobile Number</label>
+                <Input
+                  value={editForm.mobile_number}
+                  onChange={(e) => setEditForm({ ...editForm, mobile_number: e.target.value.replace(/\D/g, '') })}
+                  maxLength={10}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Primary Panchayat</label>
+                <Select
+                  value={editForm.panchayat_id}
+                  onValueChange={(value) => {
+                    setEditForm((prev) => ({
+                      ...prev,
+                      panchayat_id: value,
+                      assigned_panchayat_ids: prev.assigned_panchayat_ids.includes(value)
+                        ? prev.assigned_panchayat_ids
+                        : [...prev.assigned_panchayat_ids, value],
+                    }));
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select panchayat" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover">
+                    {panchayats.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Assigned Panchayats</label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {panchayats.map((p) => (
+                    <div key={p.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-panchayat-${p.id}`}
+                        checked={editForm.assigned_panchayat_ids.includes(p.id)}
+                        onCheckedChange={(checked) => {
+                          setEditForm((prev) => ({
+                            ...prev,
+                            assigned_panchayat_ids: checked
+                              ? [...prev.assigned_panchayat_ids, p.id]
+                              : prev.assigned_panchayat_ids.filter((id) => id !== p.id),
+                          }));
+                        }}
+                      />
+                      <label htmlFor={`edit-panchayat-${p.id}`} className="text-sm">{p.name}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Allowed Order Types</label>
+                <div className="space-y-2">
+                  {orderTypes.map((type) => (
+                    <div key={type.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-type-${type.value}`}
+                        checked={editForm.allowed_order_types.includes(type.value)}
+                        onCheckedChange={(checked) => {
+                          setEditForm((prev) => ({
+                            ...prev,
+                            allowed_order_types: checked
+                              ? [...prev.allowed_order_types, type.value]
+                              : prev.allowed_order_types.filter((t) => t !== type.value),
+                          }));
+                        }}
+                      />
+                      <label htmlFor={`edit-type-${type.value}`} className="text-sm">{type.label}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-is-active"
+                  checked={editForm.is_active}
+                  onCheckedChange={(checked) => setEditForm({ ...editForm, is_active: !!checked })}
+                />
+                <label htmlFor="edit-is-active" className="text-sm font-medium">Active</label>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+                <Button onClick={handleEditSubmit} disabled={isEditSubmitting}>
+                  {isEditSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
