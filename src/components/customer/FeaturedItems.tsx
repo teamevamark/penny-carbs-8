@@ -14,6 +14,7 @@ import { Plus, Star, Percent } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 import { useLowestCookPrices } from '@/hooks/useLowestCookPrices';
+import { useActiveCloudKitchenSlotIds } from '@/hooks/useCloudKitchenSlots';
 
 interface FeaturedItem {
   id: string;
@@ -53,6 +54,7 @@ const FeaturedItems: React.FC = () => {
   const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
   const { data: allocatedIds } = useCookAllocatedItemIds(selectedPanchayat?.id);
   const { lowestCookPrices } = useLowestCookPrices();
+  const { data: activeSlotIds } = useActiveCloudKitchenSlotIds();
 
   const { data: rawItems, isLoading } = useQuery({
     queryKey: ['featured-items', selectedPanchayat?.id],
@@ -66,6 +68,7 @@ const FeaturedItems: React.FC = () => {
           discount_percent,
           discount_amount,
           service_type,
+          cloud_kitchen_slot_id,
           available_all_panchayats,
           available_panchayat_ids,
           platform_margin_type,
@@ -85,16 +88,21 @@ const FeaturedItems: React.FC = () => {
       const { data, error } = await query.limit(8);
 
       if (error) throw error;
-      return data as FeaturedItem[];
+      return data as (FeaturedItem & { cloud_kitchen_slot_id: string | null })[];
     },
   });
 
-  // Filter out homemade items not allocated to any active cook
+  // Filter out items from inactive divisions and homemade items without cooks
   const items = (rawItems || []).filter(item => {
-    if ((item.service_type === 'homemade') && allocatedIds) {
+    // Filter homemade items not allocated to any active cook
+    if (item.service_type === 'homemade' && allocatedIds) {
       return allocatedIds.has(item.id);
     }
-    return true; // non-homemade items pass through
+    // Filter cloud kitchen items from inactive divisions
+    if (item.cloud_kitchen_slot_id && activeSlotIds) {
+      return activeSlotIds.has(item.cloud_kitchen_slot_id);
+    }
+    return true;
   });
   const handleAddToCart = async (e: React.MouseEvent, item: FeaturedItem) => {
     e.stopPropagation();

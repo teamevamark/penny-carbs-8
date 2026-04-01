@@ -61,3 +61,19 @@ export function formatSlotTime(timeString: string): string {
   const displayHours = hours % 12 || 12;
   return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
 }
+
+// Hook to get IDs of active cloud kitchen slots
+export function useActiveCloudKitchenSlotIds() {
+  return useQuery({
+    queryKey: ['active-cloud-kitchen-slot-ids'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cloud_kitchen_slots')
+        .select('id')
+        .eq('is_active', true);
+
+      if (error) throw error;
+      return new Set((data || []).map((s) => s.id));
+    },
+  });
+}

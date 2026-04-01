@@ -13,6 +13,7 @@ import { Plus, Clock, ChevronRight, Lock } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 import { useLowestCookPrices } from '@/hooks/useLowestCookPrices';
+import { useActiveCloudKitchenSlotIds } from '@/hooks/useCloudKitchenSlots';
 
 // Helper to calculate customer display price (base + margin), using lowest cook price for homemade
 const getCustomerPrice = (item: FoodItemWithImages, lowestCookPrices?: Map<string, number | null>): number => {
@@ -61,11 +62,13 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   const { requireAuth, showLoginDialog, setShowLoginDialog, onLoginSuccess } = useAuthCheck();
   const { data: allocatedIds, isLoading: allocatedIdsLoading } = useCookAllocatedItemIds(selectedPanchayat?.id);
   const { lowestCookPrices } = useLowestCookPrices();
+  const { data: activeSlotIds } = useActiveCloudKitchenSlotIds();
   const [items, setItems] = useState<FoodItemWithImages[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // For homemade, wait for allocatedIds to load before fetching
   const isHomemade = serviceType === 'homemade';
+  const isCloudKitchenType = serviceType === 'cloud_kitchen';
   const allocatedIdsReady = !isHomemade || !allocatedIdsLoading;
 
   useEffect(() => {
@@ -91,10 +94,17 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         const { data, error } = await query.limit(limit);
 
         if (error) throw error;
-        // For homemade items, only show those allocated to an active cook
         let filtered = data as FoodItemWithImages[];
+        // For homemade items, only show those allocated to an active cook
         if (isHomemade && allocatedIds) {
           filtered = filtered.filter(item => allocatedIds.has(item.id));
+        }
+        // For cloud kitchen items, only show those from active divisions
+        if (isCloudKitchenType && activeSlotIds) {
+          filtered = filtered.filter(item => {
+            const slotId = (item as any).cloud_kitchen_slot_id;
+            return !slotId || activeSlotIds.has(slotId);
+          });
         }
         setItems(filtered);
       } catch (error) {
@@ -104,7 +114,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
       }
     };
     fetchItems();
-  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade]);
+  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType, activeSlotIds]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
