@@ -1814,6 +1814,33 @@ export type Database = {
           },
         ]
       }
+      service_modules: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          service_type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       settlements: {
         Row: {
           amount: number

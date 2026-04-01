@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, ChefHat, Home } from 'lucide-react';
 import type { ServiceType } from '@/types/database';
+import { useActiveServiceTypes } from '@/hooks/useServiceModules';
 
 interface ServiceModule {
   id: ServiceType;
@@ -37,6 +38,11 @@ const modules: ServiceModule[] = [
 
 const OperationalModules: React.FC = () => {
   const navigate = useNavigate();
+  const { data: activeTypes, isLoading } = useActiveServiceTypes();
+
+  const filteredModules = activeTypes
+    ? modules.filter((m) => activeTypes.includes(m.id))
+    : modules;
 
   const handleModuleClick = (serviceType: ServiceType) => {
     if (serviceType === 'indoor_events') {
@@ -48,10 +54,13 @@ const OperationalModules: React.FC = () => {
     }
   };
 
+  if (isLoading) return null;
+  if (filteredModules.length === 0) return null;
+
   return (
     <div className="sticky top-16 z-40 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="flex items-center justify-around gap-2 px-2 py-2">
-        {modules.map((module) => (
+        {filteredModules.map((module) => (
           <button
             key={module.id}
             onClick={() => handleModuleClick(module.id)}
