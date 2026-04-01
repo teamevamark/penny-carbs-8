@@ -38,6 +38,11 @@ const modules: ServiceModule[] = [
 
 const OperationalModules: React.FC = () => {
   const navigate = useNavigate();
+  const { data: activeTypes, isLoading } = useActiveServiceTypes();
+
+  const filteredModules = activeTypes
+    ? modules.filter((m) => activeTypes.includes(m.id))
+    : modules;
 
   const handleModuleClick = (serviceType: ServiceType) => {
     if (serviceType === 'indoor_events') {
