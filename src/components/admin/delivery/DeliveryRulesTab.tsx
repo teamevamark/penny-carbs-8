@@ -280,20 +280,38 @@ const DeliveryRulesTab: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Reduced Charge Above Threshold (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Label>Reduced Delivery Charge Above Threshold <span className="text-muted-foreground text-xs">Optional</span></Label>
                 <p className="text-xs text-muted-foreground">
-                  When order amount exceeds "Free Delivery Above", charge this amount instead of min charge. Leave empty for free delivery.
+                  When order amount exceeds the "above" amount, apply the reduced delivery charge instead of min charge.
                 </p>
-                <Input
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 20"
-                  value={form.charge_above_threshold ?? ''}
-                  onChange={(e) => setForm(prev => ({
-                    ...prev,
-                    charge_above_threshold: e.target.value ? Number(e.target.value) : null,
-                  }))}
-                />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Order Above (₹)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 500"
+                      value={form.free_delivery_above ?? ''}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        free_delivery_above: e.target.value ? Number(e.target.value) : null,
+                      }))}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Delivery Charge (₹)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="e.g. 20"
+                      value={form.charge_above_threshold ?? ''}
+                      onChange={(e) => setForm(prev => ({
+                        ...prev,
+                        charge_above_threshold: e.target.value ? Number(e.target.value) : null,
+                      }))}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </ScrollArea>
