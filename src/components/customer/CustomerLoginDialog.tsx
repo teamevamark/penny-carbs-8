@@ -79,6 +79,8 @@ const CustomerLoginDialog: React.FC<CustomerLoginDialogProps> = ({
   open,
   onOpenChange,
   onLoginSuccess,
+  title,
+  message,
 }) => {
   const navigate = useNavigate();
   const { customerSignIn, customerSignUp } = useAuth();
