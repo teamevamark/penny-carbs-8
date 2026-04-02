@@ -96,14 +96,19 @@ const FeaturedItems: React.FC<FeaturedItemsProps> = ({ activeServiceTypes }) => 
     },
   });
 
-  // Filter out items from inactive divisions and homemade items without cooks
+  // Filter out items from inactive modules, inactive divisions, and homemade items without cooks
   const items = (rawItems || []).filter(item => {
+    // Filter by active service modules
+    if (activeServiceTypes && !activeServiceTypes.includes(item.service_type)) {
+      return false;
+    }
     // Filter homemade items not allocated to any active cook
     if (item.service_type === 'homemade' && allocatedIds) {
       return allocatedIds.has(item.id);
     }
-    // Filter cloud kitchen items from inactive divisions
-    if (item.cloud_kitchen_slot_id && activeSlotIds) {
+    // Filter cloud kitchen items: require valid active slot
+    if (item.service_type === 'cloud_kitchen') {
+      if (!item.cloud_kitchen_slot_id || !activeSlotIds) return false;
       return activeSlotIds.has(item.cloud_kitchen_slot_id);
     }
     return true;

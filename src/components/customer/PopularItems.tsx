@@ -103,7 +103,8 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         if (isCloudKitchenType && activeSlotIds) {
           filtered = filtered.filter(item => {
             const slotId = (item as any).cloud_kitchen_slot_id;
-            return !slotId || activeSlotIds.has(slotId);
+            // Require a valid active slot — items without a slot are excluded
+            return slotId && activeSlotIds.has(slotId);
           });
         }
         setItems(filtered);
