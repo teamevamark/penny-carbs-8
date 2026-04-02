@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,7 +7,19 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Truck, MapPin, Phone, ChefHat } from 'lucide-react';
+import { ArrowLeft, Package, Clock, CheckCircle, XCircle, Truck, MapPin, Phone, ChefHat, Ban } from 'lucide-react';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import BottomNav from '@/components/customer/BottomNav';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 import OrderRating from '@/components/customer/OrderRating';
@@ -51,6 +63,7 @@ const OrderDetail: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItemWithFood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const [cooksMap, setCooksMap] = useState<Record<string, CookInfo>>({});
 
@@ -112,6 +125,25 @@ const OrderDetail: React.FC = () => {
     fetchOrderDetails();
   }, [user, orderId]);
 
+  const handleCancelOrder = useCallback(async () => {
+    if (!order) return;
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', order.id);
+      if (error) throw error;
+      setOrder({ ...order, status: 'cancelled' });
+      toast.success('Order cancelled successfully');
+    } catch (err) {
+      console.error('Error cancelling order:', err);
+      toast.error('Failed to cancel order');
+    } finally {
+      setIsCancelling(false);
+    }
+  }, [order]);
+
   if (!user) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 pb-20">
@@ -165,6 +197,8 @@ const OrderDetail: React.FC = () => {
       </div>
     );
   }
+
+  const canCancel = order.status === 'pending' || order.status === 'confirmed';
 
   const status = statusConfig[order.status];
 
@@ -375,6 +409,32 @@ const OrderDetail: React.FC = () => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {/* Cancel Order */}
+        {canCancel && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full gap-2" disabled={isCancelling}>
+                <Ban className="h-4 w-4" />
+                {isCancelling ? 'Cancelling...' : 'Cancel Order'}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to cancel this order? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>No, Keep Order</AlertDialogCancel>
+                <AlertDialogAction onClick={handleCancelOrder} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Yes, Cancel Order
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
 
         {/* Rating Section for Delivered Orders */}
