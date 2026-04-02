@@ -76,6 +76,7 @@ const STEPS = [
 ];
 
 const IndoorEventsPlanner: React.FC = () => {
+  useServiceModuleGuard('indoor_events');
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { selectedPanchayat, selectedWardNumber } = useLocation();

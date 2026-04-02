@@ -26,6 +26,7 @@ type PopupStep = 'guest-count' | 'food-selection' | null;
 const presetCounts = [10, 25, 50, 100, 150, 200, 300];
 
 const IndoorEvents: React.FC = () => {
+  useServiceModuleGuard('indoor_events');
   const navigate = useNavigate();
   const { data: eventTypes } = useEventTypes();
   const [showReferral, setShowReferral] = useState(false);
