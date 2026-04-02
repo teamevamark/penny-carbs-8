@@ -199,43 +199,53 @@ const CookDishesTab: React.FC<CookDishesTabProps> = ({ cooks, cooksLoading }) =>
                 No dishes allocated yet. Click "Allocate Dishes" to add.
               </p>
             ) : (
-              <div className="space-y-2">
-                {cookDishes?.map(dish => (
-                  <div key={dish.id} className="flex items-center justify-between p-3 rounded-lg border bg-card">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-primary/10">
-                        <UtensilsCrossed className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{dish.food_item?.name}</span>
-                          {dish.food_item?.is_vegetarian && (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Dish Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="w-[50px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cookDishes?.map(dish => (
+                      <TableRow key={dish.id}>
+                        <TableCell className="font-medium">{dish.food_item?.name}</TableCell>
+                        <TableCell>{dish.food_item?.category?.name || 'Uncategorized'}</TableCell>
+                        <TableCell>
+                          {dish.custom_price != null ? (
+                            <span>₹{dish.custom_price} <span className="line-through text-muted-foreground/50">₹{dish.food_item?.price}</span></span>
+                          ) : (
+                            <span>₹{dish.food_item?.price}</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {dish.food_item?.is_vegetarian ? (
                             <Badge variant="outline" className="text-xs text-green-600 border-green-600">
                               <Leaf className="h-3 w-3 mr-1" />
                               Veg
                             </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {dish.custom_price != null ? (
-                            <>₹{dish.custom_price} <span className="line-through text-muted-foreground/50">₹{dish.food_item?.price}</span></>
                           ) : (
-                            <>₹{dish.food_item?.price}</>
+                            <Badge variant="outline" className="text-xs">Non-Veg</Badge>
                           )}
-                          {' • '}{dish.food_item?.category?.name || 'Uncategorized'}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemove(dish.id)}
-                      disabled={removeMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemove(dish.id)}
+                            disabled={removeMutation.isPending}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
