@@ -35,6 +35,7 @@ const DeliveryRulesTab: React.FC = () => {
     free_delivery_above: null,
     per_km_charge: null,
     max_delivery_charge: null,
+    charge_above_threshold: null,
     is_active: true,
   });
 
