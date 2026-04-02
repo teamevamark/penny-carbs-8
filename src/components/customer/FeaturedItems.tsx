@@ -126,7 +126,7 @@ const FeaturedItems: React.FC<FeaturedItemsProps> = ({ activeServiceTypes }) => 
     if (item.service_type === 'indoor_events') {
       requireAuth(() => navigate('/indoor-events'));
     } else {
-      requireAuth(() => navigate(`/item/${item.id}`));
+      navigate(`/item/${item.id}`);
     }
   };
 

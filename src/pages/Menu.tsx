@@ -119,7 +119,7 @@ const Menu: React.FC = () => {
   };
 
   const handleItemClick = (itemId: string) => {
-    requireAuth(() => navigate(`/item/${itemId}`));
+    navigate(`/item/${itemId}`);
   };
 
   // Filter and sort items

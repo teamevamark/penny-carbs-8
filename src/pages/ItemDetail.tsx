@@ -295,12 +295,31 @@ const ItemDetail: React.FC = () => {
             variant="secondary"
             size="icon"
             className="rounded-full bg-card/90 shadow-md backdrop-blur"
-            onClick={() => {
+            onClick={async () => {
               const url = `${window.location.origin}/item/${itemId}`;
-              navigator.clipboard.writeText(url);
-              setCopied(true);
-              toast.success('Link copied!');
-              setTimeout(() => setCopied(false), 2000);
+              try {
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                toast.success('Link copied!');
+                setTimeout(() => setCopied(false), 2000);
+              } catch {
+                // Fallback for insecure contexts / iframes
+                try {
+                  const textarea = document.createElement('textarea');
+                  textarea.value = url;
+                  textarea.style.position = 'fixed';
+                  textarea.style.opacity = '0';
+                  document.body.appendChild(textarea);
+                  textarea.select();
+                  document.execCommand('copy');
+                  document.body.removeChild(textarea);
+                  setCopied(true);
+                  toast.success('Link copied!');
+                  setTimeout(() => setCopied(false), 2000);
+                } catch {
+                  toast.error('Could not copy link');
+                }
+              }
             }}
           >
             {copied ? <Check className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
@@ -309,10 +328,20 @@ const ItemDetail: React.FC = () => {
             variant="secondary"
             size="icon"
             className="rounded-full bg-card/90 shadow-md backdrop-blur"
-            onClick={() => {
+            onClick={async () => {
               const url = `${window.location.origin}/item/${itemId}`;
               const text = `Check out ${item?.name || 'this item'}! ${url}`;
-              window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              if (navigator.share) {
+                try {
+                  await navigator.share({ title: item?.name || 'Food Item', text, url });
+                } catch (err: any) {
+                  if (err?.name !== 'AbortError') {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                  }
+                }
+              } else {
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }
             }}
           >
             <Share2 className="h-5 w-5" />

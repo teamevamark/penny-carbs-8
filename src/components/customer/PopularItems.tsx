@@ -123,7 +123,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   };
 
   const handleItemClick = (itemId: string) => {
-    requireAuth(() => navigate(`/item/${itemId}`));
+    navigate(`/item/${itemId}`);
   };
 
   if (isLoading) {

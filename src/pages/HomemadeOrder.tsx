@@ -122,7 +122,7 @@ const HomemadeOrder: React.FC = () => {
 
   const handleItemClick = (item: HomemadeItem) => {
     if (item.is_coming_soon_home_delivery) return;
-    requireAuth(() => navigate(`/item/${item.id}`));
+    navigate(`/item/${item.id}`);
   };
 
   const filteredItems = items
