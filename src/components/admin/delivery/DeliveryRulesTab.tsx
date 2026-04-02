@@ -125,6 +125,12 @@ const DeliveryRulesTab: React.FC = () => {
                   <span className="font-medium text-foreground">₹{rule.max_delivery_charge}</span>
                 </>
               )}
+              {rule.charge_above_threshold != null && rule.free_delivery_above != null && (
+                <>
+                  <span>Charge Above ₹{rule.free_delivery_above}:</span>
+                  <span className="font-medium text-foreground">₹{rule.charge_above_threshold}</span>
+                </>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1">
