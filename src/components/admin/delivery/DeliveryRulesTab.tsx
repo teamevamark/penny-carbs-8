@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -192,7 +193,7 @@ const DeliveryRulesTab: React.FC = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>{editingId ? 'Edit' : 'Add'} Delivery Rule</DialogTitle>
             <DialogDescription>
@@ -200,109 +201,111 @@ const DeliveryRulesTab: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label>Service Type</Label>
-              <Select
-                value={form.service_type}
-                onValueChange={(v) => setForm(prev => ({ ...prev, service_type: v }))}
-                disabled={!!editingId}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cloud_kitchen">Cloud Kitchen</SelectItem>
-                  <SelectItem value="homemade">Home Delivery</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <ScrollArea className="flex-1 max-h-[60vh] pr-4">
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Service Type</Label>
+                <Select
+                  value={form.service_type}
+                  onValueChange={(v) => setForm(prev => ({ ...prev, service_type: v }))}
+                  disabled={!!editingId}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cloud_kitchen">Cloud Kitchen</SelectItem>
+                    <SelectItem value="homemade">Home Delivery</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Rule Name</Label>
-              <Input
-                placeholder="e.g. Standard Delivery"
-                value={form.rule_name}
-                onChange={(e) => setForm(prev => ({ ...prev, rule_name: e.target.value }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Rule Name</Label>
+                <Input
+                  placeholder="e.g. Standard Delivery"
+                  value={form.rule_name}
+                  onChange={(e) => setForm(prev => ({ ...prev, rule_name: e.target.value }))}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Minimum Delivery Charge (₹)</Label>
-              <Input
-                type="number"
-                min="0"
-                value={form.min_delivery_charge}
-                onChange={(e) => setForm(prev => ({ ...prev, min_delivery_charge: Number(e.target.value) }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Minimum Delivery Charge (₹)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={form.min_delivery_charge}
+                  onChange={(e) => setForm(prev => ({ ...prev, min_delivery_charge: Number(e.target.value) }))}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Free Delivery Above (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="Leave empty if not applicable"
-                value={form.free_delivery_above ?? ''}
-                onChange={(e) => setForm(prev => ({
-                  ...prev,
-                  free_delivery_above: e.target.value ? Number(e.target.value) : null,
-                }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Free Delivery Above (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Leave empty if not applicable"
+                  value={form.free_delivery_above ?? ''}
+                  onChange={(e) => setForm(prev => ({
+                    ...prev,
+                    free_delivery_above: e.target.value ? Number(e.target.value) : null,
+                  }))}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Per KM Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="0"
-                value={form.per_km_charge ?? ''}
-                onChange={(e) => setForm(prev => ({
-                  ...prev,
-                  per_km_charge: e.target.value ? Number(e.target.value) : null,
-                }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Per KM Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={form.per_km_charge ?? ''}
+                  onChange={(e) => setForm(prev => ({
+                    ...prev,
+                    per_km_charge: e.target.value ? Number(e.target.value) : null,
+                  }))}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Max Delivery Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
-              <Input
-                type="number"
-                min="0"
-                placeholder="Leave empty for no cap"
-                value={form.max_delivery_charge ?? ''}
-                onChange={(e) => setForm(prev => ({
-                  ...prev,
-                  max_delivery_charge: e.target.value ? Number(e.target.value) : null,
-                }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label>Max Delivery Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="Leave empty for no cap"
+                  value={form.max_delivery_charge ?? ''}
+                  onChange={(e) => setForm(prev => ({
+                    ...prev,
+                    max_delivery_charge: e.target.value ? Number(e.target.value) : null,
+                  }))}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label>Reduced Charge Above Threshold (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
-              <p className="text-xs text-muted-foreground">
-                When order amount exceeds "Free Delivery Above", charge this amount instead of min charge. Leave empty for free delivery.
-              </p>
-              <Input
-                type="number"
-                min="0"
-                placeholder="e.g. 20"
-                value={form.charge_above_threshold ?? ''}
-                onChange={(e) => setForm(prev => ({
-                  ...prev,
-                  charge_above_threshold: e.target.value ? Number(e.target.value) : null,
-                }))}
-              />
+              <div className="space-y-2">
+                <Label>Reduced Charge Above Threshold (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <p className="text-xs text-muted-foreground">
+                  When order amount exceeds "Free Delivery Above", charge this amount instead of min charge. Leave empty for free delivery.
+                </p>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 20"
+                  value={form.charge_above_threshold ?? ''}
+                  onChange={(e) => setForm(prev => ({
+                    ...prev,
+                    charge_above_threshold: e.target.value ? Number(e.target.value) : null,
+                  }))}
+                />
+              </div>
             </div>
+          </ScrollArea>
 
-            <Button
-              className="w-full"
-              onClick={handleSubmit}
-              disabled={createRule.isPending || updateRule.isPending || !form.rule_name.trim()}
-            >
-              {(createRule.isPending || updateRule.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingId ? 'Save Changes' : 'Create Rule'}
-            </Button>
-          </div>
+          <Button
+            className="w-full mt-2"
+            onClick={handleSubmit}
+            disabled={createRule.isPending || updateRule.isPending || !form.rule_name.trim()}
+          >
+            {(createRule.isPending || updateRule.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {editingId ? 'Save Changes' : 'Create Rule'}
+          </Button>
         </DialogContent>
       </Dialog>
 
