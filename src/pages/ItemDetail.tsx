@@ -58,7 +58,11 @@ const ItemDetail: React.FC = () => {
           .eq('id', itemId)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching item:', error);
+          setIsLoading(false);
+          return;
+        }
         setItem(data as FoodItemWithImages);
 
         // For homemade items, fetch available cooks
