@@ -175,7 +175,7 @@ const ProviderCard: React.FC<{
 
 const AdminStorageSettings: React.FC = () => {
   const navigate = useNavigate();
-  const { role } = useAuth();
+  const { role, isLoading: authLoading } = useAuth();
   const { data: providers, isLoading } = useStorageProviders();
   const createProvider = useCreateStorageProvider();
   const updateProvider = useUpdateStorageProvider();
@@ -187,6 +187,14 @@ const AdminStorageSettings: React.FC = () => {
   const [newPriority, setNewPriority] = useState(1);
 
   const isAdmin = role === 'super_admin' || role === 'admin';
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -225,10 +233,10 @@ const AdminStorageSettings: React.FC = () => {
   const preset = selectedPreset ? PROVIDER_PRESETS[selectedPreset] : null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-28">
       <AdminNavbar />
 
-      <main className="p-4 pb-20 max-w-4xl mx-auto">
+      <main className="mx-auto max-w-4xl p-4 pb-20">
         {/* Page header */}
         <div className="flex items-start justify-between mb-6">
           <div>
