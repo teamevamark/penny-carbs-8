@@ -541,6 +541,7 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                               variant="destructive"
                               onClick={() => {
                                 setOrderToCancel(order);
+                                setCancellationReason('');
                                 setCancelDialogOpen(true);
                               }}
                             >
