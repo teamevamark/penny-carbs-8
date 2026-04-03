@@ -47,11 +47,14 @@ export function useCookNotifications() {
   const fetchOrderDetails = useCallback(async (orderId: string): Promise<PendingCookOrder | null> => {
     const { data: order, error } = await supabase
       .from('orders')
-      .select('id, order_number, service_type, total_amount, event_date, event_details, delivery_address, guest_count, created_at, customer_id')
+      .select('id, order_number, status, service_type, total_amount, event_date, event_details, delivery_address, guest_count, created_at, customer_id')
       .eq('id', orderId)
       .maybeSingle();
 
     if (error || !order) return null;
+
+    // Skip cancelled orders
+    if (order.status === 'cancelled') return null;
 
     // Get customer info
     const { data: customer } = await supabase
