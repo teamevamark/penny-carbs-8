@@ -57,6 +57,7 @@ import IndoorEventsModule from "./pages/admin/indoor-events/IndoorEventsModule";
 import CloudKitchenModule from "./pages/admin/cloud-kitchen/CloudKitchenModule";
 import HomeDeliveryModule from "./pages/admin/home-delivery/HomeDeliveryModule";
 import AdminUsers from "./pages/admin/users/AdminUsers";
+import AdminStorageSettings from "./pages/admin/AdminStorageSettings";
 
 const queryClient = new QueryClient();
 
