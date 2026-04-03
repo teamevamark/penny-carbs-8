@@ -107,6 +107,7 @@ const AdminDashboard: React.FC = () => {
 
   const superAdminUtilities = [
     { icon: Settings, label: 'Admin Management', path: '/admin/admins', description: 'Roles & Permissions' },
+    { icon: Image, label: 'Storage Settings', path: '/admin/storage-settings', description: 'External Storage' },
   ];
 
   return (

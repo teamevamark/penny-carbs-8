@@ -124,6 +124,7 @@ const App = () => (
                 <Route path="/admin/special-offers" element={<AdminSpecialOffers />} />
                 <Route path="/admin/admins" element={<AdminAdmins />} />
                 <Route path="/admin/work-assignment" element={<AdminWorkAssignment />} />
+                <Route path="/admin/storage-settings" element={<AdminStorageSettings />} />
                 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
