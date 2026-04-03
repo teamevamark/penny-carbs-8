@@ -102,55 +102,8 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
   useEffect(() => {
     fetchOrders();
   }, [statusFilter, serviceType]);
-  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [orderToCancel, setOrderToCancel] = useState<OrderWithProfile | null>(null);
 
-  const fetchOrders = async () => {
-    setIsLoading(true);
-    try {
-      let query = supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
 
-      if (serviceType) {
-        query = query.eq('service_type', serviceType);
-      }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      const ordersWithProfiles = await Promise.all(
-        (data || []).map(async (order) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, mobile_number')
-            .eq('user_id', order.customer_id)
-            .single();
-
-          return {
-            ...order,
-            profiles: profileData || undefined,
-          } as OrderWithProfile;
-        })
-      );
-
-      setOrders(ordersWithProfiles);
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      toast({ title: 'Error', description: 'Failed to fetch orders', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOrders();
-  }, [statusFilter, serviceType]);
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
