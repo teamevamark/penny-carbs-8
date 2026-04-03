@@ -480,6 +480,38 @@ export type Database = {
           },
         ]
       }
+      cook_dish_images: {
+        Row: {
+          cook_dish_id: string
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+        }
+        Insert: {
+          cook_dish_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+        }
+        Update: {
+          cook_dish_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cook_dish_images_cook_dish_id_fkey"
+            columns: ["cook_dish_id"]
+            isOneToOne: false
+            referencedRelation: "cook_dishes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cook_dish_requests: {
         Row: {
           admin_notes: string | null
@@ -577,6 +609,7 @@ export type Database = {
           id: string
           is_coming_soon: boolean
           updated_at: string
+          youtube_video_url: string | null
         }
         Insert: {
           allocated_at?: string
@@ -588,6 +621,7 @@ export type Database = {
           id?: string
           is_coming_soon?: boolean
           updated_at?: string
+          youtube_video_url?: string | null
         }
         Update: {
           allocated_at?: string
@@ -599,6 +633,7 @@ export type Database = {
           id?: string
           is_coming_soon?: boolean
           updated_at?: string
+          youtube_video_url?: string | null
         }
         Relationships: [
           {
@@ -1974,6 +2009,36 @@ export type Database = {
           link_url?: string | null
           subtitle?: string | null
           title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      storage_providers: {
+        Row: {
+          created_at: string
+          credentials: Json
+          id: string
+          is_enabled: boolean
+          priority: number
+          provider_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentials?: Json
+          id?: string
+          is_enabled?: boolean
+          priority?: number
+          provider_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentials?: Json
+          id?: string
+          is_enabled?: boolean
+          priority?: number
+          provider_name?: string
           updated_at?: string
         }
         Relationships: []
