@@ -81,7 +81,8 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
       let query = supabase
         .from('orders')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(500);
 
       if (serviceType) {
         query = query.eq('service_type', serviceType);
@@ -94,20 +95,25 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
       const { data, error } = await query;
       if (error) throw error;
 
-      const ordersWithProfiles = await Promise.all(
-        (data || []).map(async (order) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name, mobile_number')
-            .eq('user_id', order.customer_id)
-            .single();
+      // Fetch all unique customer profiles in one batch
+      const customerIds = [...new Set((data || []).map(o => o.customer_id))];
+      const profilesMap = new Map<string, { name: string; mobile_number: string }>();
 
-          return {
-            ...order,
-            profiles: profileData || undefined,
-          } as OrderWithProfile;
-        })
-      );
+      if (customerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, name, mobile_number')
+          .in('user_id', customerIds);
+
+        (profiles || []).forEach(p => {
+          profilesMap.set(p.user_id, { name: p.name, mobile_number: p.mobile_number });
+        });
+      }
+
+      const ordersWithProfiles = (data || []).map(order => ({
+        ...order,
+        profiles: profilesMap.get(order.customer_id) || undefined,
+      })) as OrderWithProfile[];
 
       setOrders(ordersWithProfiles);
     } catch (error) {
@@ -209,6 +215,8 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
     setExpandedOrderId(null);
     fetchOrders();
   }, [statusFilter, serviceType]);
+
+
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     try {
