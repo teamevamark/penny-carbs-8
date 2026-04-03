@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle, MessageCircle, Phone, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -51,7 +52,7 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState<OrderWithProfile | null>(null);
-
+  const [cancelReason, setCancelReason] = useState('');
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
@@ -107,11 +108,15 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
 
 
 
-  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, reason?: string) => {
     try {
+      const updateData: Record<string, unknown> = { status: newStatus, updated_at: new Date().toISOString() };
+      if (newStatus === 'cancelled' && reason) {
+        updateData.cancellation_reason = reason;
+      }
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', orderId);
 
       if (error) throw error;
@@ -324,29 +329,47 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
       )}
 
       {/* Cancel Order Confirmation Dialog */}
-      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+      <AlertDialog open={cancelDialogOpen} onOpenChange={(open) => {
+        setCancelDialogOpen(open);
+        if (!open) { setOrderToCancel(null); setCancelReason(''); }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               Cancel Order
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to cancel order{' '}
-              <span className="font-mono font-semibold">#{orderToCancel?.order_number}</span>?
-              <br />
-              <span className="text-destructive font-medium">This action cannot be undone.</span>
+            <AlertDialogDescription asChild>
+              <div>
+                <p>
+                  Are you sure you want to cancel order{' '}
+                  <span className="font-mono font-semibold">#{orderToCancel?.order_number}</span>?
+                </p>
+                <p className="text-destructive font-medium mt-1">This action cannot be undone.</p>
+                <div className="mt-3">
+                  <label className="text-sm font-medium text-foreground">Cancellation Reason *</label>
+                  <Textarea
+                    placeholder="Enter reason for cancellation..."
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>No, Keep Order</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!cancelReason.trim()}
               onClick={() => {
-                if (orderToCancel) {
-                  updateOrderStatus(orderToCancel.id, 'cancelled');
+                if (orderToCancel && cancelReason.trim()) {
+                  updateOrderStatus(orderToCancel.id, 'cancelled', cancelReason.trim());
                   setCancelDialogOpen(false);
                   setOrderToCancel(null);
+                  setCancelReason('');
                 }
               }}
             >

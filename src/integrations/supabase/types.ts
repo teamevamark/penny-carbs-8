@@ -1535,6 +1535,7 @@ export type Database = {
           advance_payment_verified_by: string | null
           assigned_cook_id: string | null
           assigned_delivery_id: string | null
+          cancellation_reason: string | null
           cloud_kitchen_slot_id: string | null
           cook_assigned_at: string | null
           cook_assignment_status: string | null
@@ -1576,6 +1577,7 @@ export type Database = {
           advance_payment_verified_by?: string | null
           assigned_cook_id?: string | null
           assigned_delivery_id?: string | null
+          cancellation_reason?: string | null
           cloud_kitchen_slot_id?: string | null
           cook_assigned_at?: string | null
           cook_assignment_status?: string | null
@@ -1617,6 +1619,7 @@ export type Database = {
           advance_payment_verified_by?: string | null
           assigned_cook_id?: string | null
           assigned_delivery_id?: string | null
+          cancellation_reason?: string | null
           cloud_kitchen_slot_id?: string | null
           cook_assigned_at?: string | null
           cook_assignment_status?: string | null
