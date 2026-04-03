@@ -371,10 +371,10 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                     <CollapsibleContent>
                       <div className="mt-4 pt-3 border-t space-y-4">
                         {/* Cancellation Reason */}
-                        {order.status === 'cancelled' && (order as any).cancellation_reason && (
+                        {order.status === 'cancelled' && order.cancellation_reason && (
                           <div className="rounded-md bg-destructive/10 p-3 text-sm">
                             <p className="font-semibold text-destructive text-xs mb-1">Cancellation Reason:</p>
-                            <p className="text-foreground">{(order as any).cancellation_reason}</p>
+                            <p className="text-foreground">{order.cancellation_reason}</p>
                           </div>
                         )}
                         {isDetailsLoading ? (
