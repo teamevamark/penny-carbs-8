@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import type { Order, OrderStatus, ServiceType } from '@/types/database';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle, MessageCircle, Phone, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -43,6 +44,7 @@ interface OrdersTabContentProps {
 
 const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<OrderWithProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,6 +205,52 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Quick Actions: WhatsApp, Call, View Detail */}
+                  <div className="mt-2 flex items-center gap-2">
+                    {order.profiles?.mobile_number && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const phone = order.profiles!.mobile_number.replace(/\D/g, '');
+                            const fullPhone = phone.startsWith('91') ? phone : `91${phone}`;
+                            window.open(`https://wa.me/${fullPhone}?text=Hi%20${encodeURIComponent(order.profiles!.name)}%2C%20regarding%20your%20order%20%23${order.order_number}`, '_blank');
+                          }}
+                        >
+                          <MessageCircle className="h-3.5 w-3.5" />
+                          WhatsApp
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`tel:${order.profiles!.mobile_number}`, '_self');
+                          }}
+                        >
+                          <Phone className="h-3.5 w-3.5" />
+                          Call
+                        </Button>
+                      </>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1.5 ml-auto"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/order/${order.id}`);
+                      }}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      Details
+                    </Button>
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
