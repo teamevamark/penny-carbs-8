@@ -40,6 +40,7 @@ const AdminNavbar: React.FC = () => {
     { icon: Truck, label: 'Delivery', path: '/admin/delivery-staff' },
     { icon: MapPin, label: 'Locations', path: '/admin/locations' },
     { icon: BarChart3, label: 'Reports', path: '/admin/reports' },
+    { icon: Settings, label: 'Storage', path: '/admin/storage-settings' },
   ];
 
   if (role === 'super_admin') {

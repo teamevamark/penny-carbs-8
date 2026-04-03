@@ -186,14 +186,14 @@ const AdminStorageSettings: React.FC = () => {
   const [newCreds, setNewCreds] = useState<Record<string, string>>({});
   const [newPriority, setNewPriority] = useState(1);
 
-  const isSuperAdmin = role === 'super_admin';
+  const isAdmin = role === 'super_admin' || role === 'admin';
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
         <Settings className="h-16 w-16 text-muted-foreground" />
         <h2 className="mt-4 text-xl font-semibold">Access Denied</h2>
-        <p className="mt-2 text-muted-foreground">Only Super Admins can manage storage settings</p>
+        <p className="mt-2 text-muted-foreground">Only Admins can manage storage settings</p>
         <Button className="mt-6" onClick={() => navigate('/admin')}>Go Back</Button>
       </div>
     );
