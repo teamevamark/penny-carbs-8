@@ -43,6 +43,37 @@ const BannerCarousel: React.FC = () => {
     fetchBanners();
   }, []);
 
+  const handleBannerClick = async (banner: Banner) => {
+    // If banner has no link, do nothing
+    if (!banner.link_url || banner.link_url === '#') return;
+
+    // If banner has a service_type and user is logged in with a panchayat, check availability
+    if (banner.service_type && user && profile?.panchayat_id) {
+      const { count, error } = await supabase
+        .from('food_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('service_type', banner.service_type)
+        .eq('is_available', true)
+        .or(`available_all_panchayats.eq.true,available_panchayat_ids.cs.{${profile.panchayat_id}}`);
+
+      if (!error && (count === null || count === 0)) {
+        toast({
+          title: 'Not available in your area',
+          description: 'This service is not yet available in your panchayat.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    // Navigate - handle internal vs external links
+    if (banner.link_url.startsWith('/')) {
+      navigate(banner.link_url);
+    } else {
+      window.open(banner.link_url, '_blank');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="px-4 py-4">
