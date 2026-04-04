@@ -74,11 +74,12 @@ const ItemDetail: React.FC = () => {
         }
         setItem(data as FoodItemWithImages);
 
-        // For homemade items, fetch available cooks
+        // For homemade and cloud kitchen items, fetch available cooks
         const serviceTypes = (data as any).service_types || [];
         const isHomemade = data.service_type === 'homemade' || serviceTypes.includes('homemade');
+        const isCloudKitchenItem = data.service_type === 'cloud_kitchen' || serviceTypes.includes('cloud_kitchen');
         
-        if (isHomemade) {
+        if (isHomemade || isCloudKitchenItem) {
           const { data: cookDishes, error: cooksError } = await supabase
             .from('cook_dishes')
             .select(`
@@ -141,12 +142,13 @@ const ItemDetail: React.FC = () => {
 
   const serviceTypes = (item as any)?.service_types || [];
   const isHomemade = item?.service_type === 'homemade' || serviceTypes.includes('homemade');
+  const isCloudKitchen = item?.service_type === 'cloud_kitchen' || serviceTypes.includes('cloud_kitchen');
   const isIndoorEvents = item?.service_type === 'indoor_events';
   const isComingSoon = isHomemade ? (item as any)?.is_coming_soon_home_delivery === true : (item as any)?.is_coming_soon_cloud_kitchen === true;
 
-  // Multi-cook: require selection
+  // Multi-cook: require selection (homemade only for cook selector UI)
   const needsCookSelection = isHomemade && availableCooks.length > 1 && !selectedCookId;
-  const noCooksAvailable = isHomemade && availableCooks.length === 0 && !isLoading;
+  const noCooksAvailable = (isHomemade || isCloudKitchen) && availableCooks.length === 0 && !isLoading;
 
   const customerPrice = useMemo(() => {
     if (!item) return 0;

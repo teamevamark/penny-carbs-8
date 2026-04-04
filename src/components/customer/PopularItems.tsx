@@ -95,8 +95,8 @@ const PopularItems: React.FC<PopularItemsProps> = ({
 
         if (error) throw error;
         let filtered = data as FoodItemWithImages[];
-        // For homemade items, only show those allocated to an active cook
-        if (isHomemade && allocatedIds) {
+        // For homemade and cloud kitchen items, only show those allocated to an active cook
+        if ((isHomemade || isCloudKitchenType) && allocatedIds) {
           filtered = filtered.filter(item => allocatedIds.has(item.id));
         }
         // For cloud kitchen items, only show those from active divisions

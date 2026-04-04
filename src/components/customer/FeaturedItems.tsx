@@ -102,9 +102,9 @@ const FeaturedItems: React.FC<FeaturedItemsProps> = ({ activeServiceTypes }) => 
     if (activeServiceTypes && !activeServiceTypes.includes(item.service_type)) {
       return false;
     }
-    // Filter homemade items not allocated to any active cook
-    if (item.service_type === 'homemade' && allocatedIds) {
-      return allocatedIds.has(item.id);
+    // Filter homemade and cloud kitchen items not allocated to any active cook
+    if ((item.service_type === 'homemade' || item.service_type === 'cloud_kitchen') && allocatedIds) {
+      if (!allocatedIds.has(item.id)) return false;
     }
     // Filter cloud kitchen items: require valid active slot
     if (item.service_type === 'cloud_kitchen') {

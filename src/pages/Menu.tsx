@@ -64,9 +64,11 @@ const Menu: React.FC = () => {
   const validServiceType = serviceType as ServiceType;
   const serviceInfo = serviceTypeLabels[validServiceType] || { title: 'Menu', emoji: '🍽️' };
 
-  // For homemade, wait for allocatedIds to load before fetching
+  // For homemade and cloud_kitchen, wait for allocatedIds to load before fetching
   const isHomemade = validServiceType === 'homemade';
-  const allocatedIdsReady = !isHomemade || allocatedIds !== undefined;
+  const isCloudKitchen = validServiceType === 'cloud_kitchen';
+  const needsCookCheck = isHomemade || isCloudKitchen;
+  const allocatedIdsReady = !needsCookCheck || allocatedIds !== undefined;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,8 +96,8 @@ const Menu: React.FC = () => {
 
         if (itemsRes.data) {
           let filtered = itemsRes.data as FoodItemWithImages[];
-          // For homemade, only show items allocated to an active cook
-          if (isHomemade && allocatedIds) {
+          // For homemade and cloud kitchen, only show items allocated to an active cook
+          if (needsCookCheck && allocatedIds) {
             filtered = filtered.filter(item => allocatedIds.has(item.id));
           }
           setItems(filtered);
@@ -111,7 +113,7 @@ const Menu: React.FC = () => {
     };
 
     fetchData();
-  }, [validServiceType, allocatedIds, allocatedIdsReady, isHomemade]);
+  }, [validServiceType, allocatedIds, allocatedIdsReady, needsCookCheck]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
