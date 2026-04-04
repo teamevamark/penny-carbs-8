@@ -96,8 +96,8 @@ const Menu: React.FC = () => {
 
         if (itemsRes.data) {
           let filtered = itemsRes.data as FoodItemWithImages[];
-          // For homemade, only show items allocated to an active cook
-          if (isHomemade && allocatedIds) {
+          // For homemade and cloud kitchen, only show items allocated to an active cook
+          if (needsCookCheck && allocatedIds) {
             filtered = filtered.filter(item => allocatedIds.has(item.id));
           }
           setItems(filtered);
