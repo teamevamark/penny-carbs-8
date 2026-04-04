@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { ChefHat, Leaf, IndianRupee, Check, X } from 'lucide-react';
 import DishFeaturesManager from './DishFeaturesManager';
-import ImageUpload from '@/components/admin/ImageUpload';
+import DishMediaManager from './DishMediaManager';
 
 const CookAllocatedDishes: React.FC = () => {
   const { data: allocatedDishes, isLoading } = useCookAllocatedDishes();
