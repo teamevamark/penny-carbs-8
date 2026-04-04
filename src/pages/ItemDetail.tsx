@@ -110,11 +110,11 @@ const ItemDetail: React.FC = () => {
             const activeCooks = cookDishes
               .filter((cd: any) => {
                 if (!cd.cooks?.is_active || !cd.cooks?.is_available) return false;
-                if (selectedPanchayat?.id) {
-                  const assignedPanchayats: string[] = cd.cooks.assigned_panchayat_ids || [];
-                  return assignedPanchayats.includes(selectedPanchayat.id) || cd.cooks.panchayat_id === selectedPanchayat.id;
-                }
-                return true;
+                // Always enforce panchayat check - if no panchayat selected, no cooks shown
+                const panchayatId = selectedPanchayat?.id;
+                if (!panchayatId) return false;
+                const assignedPanchayats: string[] = cd.cooks.assigned_panchayat_ids || [];
+                return assignedPanchayats.includes(panchayatId) || cd.cooks.panchayat_id === panchayatId;
               })
               .map((cd: any) => ({
                 cook_id: cd.cook_id,
@@ -138,7 +138,7 @@ const ItemDetail: React.FC = () => {
     };
 
     fetchItem();
-  }, [itemId]);
+  }, [itemId, selectedPanchayat?.id]);
 
   const serviceTypes = (item as any)?.service_types || [];
   const isHomemade = item?.service_type === 'homemade' || serviceTypes.includes('homemade');
