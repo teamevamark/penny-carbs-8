@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { Upload, Loader2, X } from 'lucide-react';
-import { useActiveStorageProvider, StorageProvider } from '@/hooks/useStorageProviders';
+import { useActiveStorageProvider, fetchActiveStorageProvider, StorageProvider } from '@/hooks/useStorageProviders';
 
 interface DishImage {
   id: string;
@@ -166,11 +166,12 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
     setUploadingSlot(slotIndex);
     try {
       const compressed = await compressImage(file, TARGET_SIZE);
+      const latestProvider = activeProvider ?? await fetchActiveStorageProvider().catch(() => null);
 
       let url: string;
-      if (activeProvider) {
+      if (latestProvider) {
         try {
-          url = await uploadToProvider(compressed, activeProvider);
+          url = await uploadToProvider(compressed, latestProvider);
         } catch (extError) {
           console.warn('External provider failed, falling back to Supabase:', extError);
           url = await uploadToSupabase(compressed);
@@ -191,6 +192,7 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
       if (error) throw error;
       toast({ title: 'Image uploaded' });
       queryClient.invalidateQueries({ queryKey: ['cook-allocated-dishes'] });
+      queryClient.invalidateQueries({ queryKey: ['storage-providers', 'active'] });
     } catch (err: any) {
       toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
     } finally {

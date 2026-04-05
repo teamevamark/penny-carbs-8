@@ -12,6 +12,20 @@ export interface StorageProvider {
   updated_at: string;
 }
 
+export const fetchActiveStorageProvider = async (): Promise<StorageProvider | null> => {
+  const { data, error } = await supabase
+    .from('storage_providers' as any)
+    .select('*')
+    .eq('is_enabled', true)
+    .order('priority', { ascending: false })
+    .limit(1);
+
+  if (error) throw error;
+
+  const providers = (data || []) as unknown as StorageProvider[];
+  return providers.length > 0 ? providers[0] : null;
+};
+
 export const useStorageProviders = () => {
   return useQuery({
     queryKey: ['storage-providers'],
@@ -40,6 +54,7 @@ export const useCreateStorageProvider = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storage-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['storage-providers', 'active'] });
       toast({ title: 'Provider added successfully' });
     },
     onError: (error: any) => {
@@ -60,6 +75,7 @@ export const useUpdateStorageProvider = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storage-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['storage-providers', 'active'] });
       toast({ title: 'Provider updated' });
     },
     onError: (error: any) => {
@@ -80,6 +96,7 @@ export const useDeleteStorageProvider = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['storage-providers'] });
+      queryClient.invalidateQueries({ queryKey: ['storage-providers', 'active'] });
       toast({ title: 'Provider deleted' });
     },
     onError: (error: any) => {
@@ -91,16 +108,12 @@ export const useDeleteStorageProvider = () => {
 export const useActiveStorageProvider = () => {
   return useQuery({
     queryKey: ['storage-providers', 'active'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('storage_providers' as any)
-        .select('*')
-        .eq('is_enabled', true)
-        .order('priority', { ascending: false })
-        .limit(1);
-      if (error) throw error;
-      const providers = (data || []) as unknown as StorageProvider[];
-      return providers.length > 0 ? providers[0] : null;
-    },
+    queryFn: fetchActiveStorageProvider,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
   });
 };

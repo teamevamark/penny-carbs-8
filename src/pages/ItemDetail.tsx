@@ -21,6 +21,26 @@ import { calculatePlatformMargin } from '@/lib/priceUtils';
 import CookSelector, { type CookOption } from '@/components/customer/CookSelector';
 import PendingCartDialog from '@/components/customer/PendingCartDialog';
 import CustomerLoginDialog from '@/components/customer/CustomerLoginDialog';
+import cfcOfferDetailImage from '@/assets/cfc-offer-detail.jpeg';
+
+const getCustomItemTheme = (itemName: string | undefined) => {
+  const normalizedName = itemName?.toLowerCase().trim() || '';
+
+  if (
+    normalizedName.includes('carbs brost chicken mega offer') ||
+    normalizedName.includes('8 piece cfc')
+  ) {
+    return {
+      heroImage: cfcOfferDetailImage,
+      eyebrow: 'Limited time offer',
+      title: '8 Piece CFC Mega Offer',
+      description: 'A custom promo layout for your brost special with the uploaded poster shown first on the detail page.',
+      highlights: ['₹299 deal', '8 crispy pieces', 'Best deal'],
+    };
+  }
+
+  return null;
+};
 
 const ItemDetail: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>();
@@ -110,7 +130,6 @@ const ItemDetail: React.FC = () => {
             const activeCooks = cookDishes
               .filter((cd: any) => {
                 if (!cd.cooks?.is_active || !cd.cooks?.is_available) return false;
-                // Always enforce panchayat check - if no panchayat selected, no cooks shown
                 const panchayatId = selectedPanchayat?.id;
                 if (!panchayatId) return false;
                 const assignedPanchayats: string[] = cd.cooks.assigned_panchayat_ids || [];
@@ -189,7 +208,6 @@ const ItemDetail: React.FC = () => {
       toast.error('Please select a cook first');
       return;
     }
-    // Check for pending cart items
     if (hasOtherCartItems && user) {
       setPendingAction('add');
       setShowPendingCartDialog(true);
@@ -215,7 +233,6 @@ const ItemDetail: React.FC = () => {
       navigate('/auth');
       return;
     }
-    // Check for pending cart items
     if (hasOtherCartItems) {
       setPendingAction('buy');
       setShowPendingCartDialog(true);
@@ -232,7 +249,6 @@ const ItemDetail: React.FC = () => {
   };
 
   const handlePendingCartContinue = async () => {
-    // Keep existing cart items and proceed
     setShowPendingCartDialog(false);
     if (pendingAction === 'add') {
       await performAddToCart();
@@ -288,10 +304,14 @@ const ItemDetail: React.FC = () => {
     if (b.is_primary) return 1;
     return a.display_order - b.display_order;
   }) || [];
+  const customTheme = getCustomItemTheme(item.name);
+  const heroImages = Array.from(new Set([
+    customTheme?.heroImage,
+    ...images.map((image) => image.image_url),
+  ].filter(Boolean) as string[]));
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
       <header className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between p-4">
         <Button
           variant="secondary"
@@ -314,7 +334,6 @@ const ItemDetail: React.FC = () => {
                 toast.success('Link copied!');
                 setTimeout(() => setCopied(false), 2000);
               } catch {
-                // Fallback for insecure contexts / iframes
                 try {
                   const textarea = document.createElement('textarea');
                   textarea.value = url;
@@ -360,24 +379,41 @@ const ItemDetail: React.FC = () => {
         </div>
       </header>
 
-      {/* Image Carousel */}
       <div className="relative bg-secondary">
-        {images.length > 0 ? (
+        {heroImages.length > 0 ? (
           <Carousel className="w-full">
             <CarouselContent>
-              {images.map((image) => (
-                <CarouselItem key={image.id}>
-                  <div className="h-72 w-full sm:h-96">
+              {heroImages.map((imageUrl, index) => (
+                <CarouselItem key={`${imageUrl}-${index}`}>
+                  <div className="relative h-72 w-full overflow-hidden sm:h-96">
                     <img
-                      src={image.image_url}
-                      alt={item.name}
+                      src={imageUrl}
+                      alt={index === 0 && customTheme ? `${item.name} promotional poster` : item.name}
                       className="h-full w-full object-cover"
+                      loading={index === 0 ? 'eager' : 'lazy'}
                     />
+                    {index === 0 && customTheme && (
+                      <>
+                        <div className="absolute inset-0 bg-gradient-to-t from-background/85 via-background/10 to-transparent" />
+                        <div className="absolute inset-x-0 top-20 p-4 sm:top-24 sm:p-6">
+                          <div className="max-w-sm rounded-3xl border bg-card/85 p-4 shadow-xl backdrop-blur sm:p-5">
+                            <Badge variant="secondary" className="mb-3">{customTheme.eyebrow}</Badge>
+                            <h2 className="text-2xl font-bold leading-tight text-foreground sm:text-3xl">{customTheme.title}</h2>
+                            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{customTheme.description}</p>
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {customTheme.highlights.map((highlight) => (
+                                <Badge key={highlight} variant="outline">{highlight}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            {images.length > 1 && (
+            {heroImages.length > 1 && (
               <>
                 <CarouselPrevious className="left-4" />
                 <CarouselNext className="right-4" />
@@ -391,7 +427,6 @@ const ItemDetail: React.FC = () => {
         )}
       </div>
 
-      {/* Content */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-4">
           <h1 className="font-display text-2xl font-bold">{item.name}</h1>
@@ -417,9 +452,22 @@ const ItemDetail: React.FC = () => {
         )}
 
         {item.description && (
-          <p className="mt-4 text-muted-foreground leading-relaxed">
+          <p className="mt-4 leading-relaxed text-muted-foreground">
             {item.description}
           </p>
+        )}
+
+        {customTheme && (
+          <div className="mt-4 rounded-3xl border bg-card p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              {customTheme.highlights.map((highlight) => (
+                <Badge key={`detail-${highlight}`} variant="secondary">{highlight}</Badge>
+              ))}
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              This item now uses your uploaded creative on the detail page for a stronger promo-style presentation.
+            </p>
+          </div>
         )}
 
         <div className="mt-6">
@@ -434,7 +482,6 @@ const ItemDetail: React.FC = () => {
           )}
         </div>
 
-        {/* Cook Selection for Homemade items */}
         {isHomemade && availableCooks.length > 0 && (
           <CookSelector
             cooks={availableCooks}
@@ -446,39 +493,36 @@ const ItemDetail: React.FC = () => {
           />
         )}
 
-        {/* Cook selection hint */}
         {needsCookSelection && (
-          <p className="mt-2 text-sm text-destructive font-medium">
+          <p className="mt-2 text-sm font-medium text-destructive">
             ⚠️ Please select a cook above to add to cart
           </p>
         )}
 
-        {/* Indoor Events Notice */}
         {isIndoorEvents && (
           <div className="mt-4 rounded-lg border border-indoor-events/30 bg-indoor-events/5 p-4">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-indoor-events">🎉 Event Item:</strong> This dish is available for indoor events and party bookings. 
+              <strong className="text-indoor-events">🎉 Event Item:</strong> This dish is available for indoor events and party bookings.
               Contact us to customize your menu and get a quotation.
             </p>
           </div>
         )}
       </div>
 
-      {/* Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 border-t bg-card p-4 shadow-lg">
         {noCooksAvailable ? (
-          <Button className="w-full h-12 text-base" disabled>
+          <Button className="h-12 w-full text-base" disabled>
             <Lock className="mr-2 h-5 w-5" />
             No Cooks Available
           </Button>
         ) : isComingSoon ? (
-          <Button className="w-full h-12 text-base" disabled>
+          <Button className="h-12 w-full text-base" disabled>
             <Lock className="mr-2 h-5 w-5" />
             Coming Soon
           </Button>
         ) : isIndoorEvents ? (
-          <Button 
-            className="w-full h-12 text-base bg-indoor-events hover:bg-indoor-events/90" 
+          <Button
+            className="h-12 w-full text-base bg-indoor-events hover:bg-indoor-events/90"
             onClick={() => navigate('/indoor-events')}
           >
             <CalendarHeart className="mr-2 h-5 w-5" />
@@ -541,8 +585,8 @@ const ItemDetail: React.FC = () => {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <Button 
-                className="flex-1 h-12 text-base" 
+              <Button
+                className="h-12 flex-1 text-base"
                 onClick={handleAddToCart}
                 disabled={needsCookSelection}
               >
@@ -550,9 +594,9 @@ const ItemDetail: React.FC = () => {
                 Add to Cart - ₹{(customerPrice * quantity).toFixed(0)}
               </Button>
             </div>
-            <Button 
+            <Button
               variant="outline"
-              className="w-full h-10 text-sm border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+              className="h-10 w-full border-primary text-sm text-primary hover:bg-primary hover:text-primary-foreground"
               onClick={handleBuyNow}
               disabled={needsCookSelection}
             >
@@ -563,7 +607,6 @@ const ItemDetail: React.FC = () => {
         )}
       </div>
 
-      {/* Pending Cart Dialog */}
       <PendingCartDialog
         open={showPendingCartDialog}
         onOpenChange={setShowPendingCartDialog}
@@ -576,7 +619,6 @@ const ItemDetail: React.FC = () => {
         }}
       />
 
-      {/* Login Dialog for unauthenticated users */}
       <CustomerLoginDialog
         open={showLoginDialog}
         onOpenChange={(open) => {
