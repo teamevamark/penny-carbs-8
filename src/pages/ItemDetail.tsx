@@ -59,12 +59,8 @@ const ItemDetail: React.FC = () => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { selectedPanchayat } = useLocation();
 
-  // Show login dialog for unauthenticated users accessing via shareable link
-  useEffect(() => {
-    if (!authLoading && !user) {
-      setShowLoginDialog(true);
-    }
-  }, [authLoading, user]);
+  // Don't auto-show login dialog - let users browse freely
+  // Login will be prompted when they try to add to cart or buy
 
   const cartItem = cartItems.find(ci => ci.food_item_id === itemId);
   const currentCartQuantity = cartItem?.quantity || 0;
@@ -206,11 +202,15 @@ const ItemDetail: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!item) return;
+    if (!user) {
+      setShowLoginDialog(true);
+      return;
+    }
     if (needsCookSelection) {
       toast.error('Please select a cook first');
       return;
     }
-    if (hasOtherCartItems && user) {
+    if (hasOtherCartItems) {
       setPendingAction('add');
       setShowPendingCartDialog(true);
       return;
@@ -227,12 +227,12 @@ const ItemDetail: React.FC = () => {
 
   const handleBuyNow = async () => {
     if (!item) return;
-    if (needsCookSelection) {
-      toast.error('Please select a cook first');
+    if (!user) {
+      setShowLoginDialog(true);
       return;
     }
-    if (!user) {
-      navigate('/auth');
+    if (needsCookSelection) {
+      toast.error('Please select a cook first');
       return;
     }
     if (hasOtherCartItems) {

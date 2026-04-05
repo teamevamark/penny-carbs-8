@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
+import { useCustomerAddresses } from '@/hooks/useCustomerAddresses';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,8 @@ const Checkout: React.FC = () => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isUsingSavedAddress = useRef(false);
+  const { addresses, createAddress } = useCustomerAddresses();
 
   // Determine service type from cart items (assume all items have same service type)
   const serviceType = items[0]?.food_item?.service_type || 'cloud_kitchen';
@@ -226,6 +229,22 @@ const Checkout: React.FC = () => {
         }
       }
 
+      // Auto-save the manually entered address for future use
+      if (!isUsingSavedAddress.current && deliveryAddress.trim()) {
+        const alreadySaved = addresses.some(
+          (a) => a.full_address.trim().toLowerCase() === deliveryAddress.trim().toLowerCase()
+        );
+        if (!alreadySaved) {
+          createAddress({
+            full_address: deliveryAddress.trim(),
+            address_label: 'Home',
+            panchayat_id: selectedPanchayat?.id,
+            ward_number: selectedWardNumber || undefined,
+            is_default: addresses.length === 0,
+          });
+        }
+      }
+
       // Clear the cart
       await clearCart();
 
@@ -283,7 +302,13 @@ const Checkout: React.FC = () => {
               <Label>Select or enter delivery address *</Label>
               <AddressSelector
                 selectedAddress={deliveryAddress}
-                onAddressChange={setDeliveryAddress}
+                onAddressChange={(addr) => {
+                  setDeliveryAddress(addr);
+                  isUsingSavedAddress.current = false;
+                }}
+                onAddressSelect={() => {
+                  isUsingSavedAddress.current = true;
+                }}
               />
             </div>
 
