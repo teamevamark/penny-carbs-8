@@ -32,14 +32,22 @@ interface CookSelectorProps {
 }
 
 const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSelectCook, basePrice, platformMarginType = 'percent', platformMarginValue = 0 }) => {
-  if (cooks.length === 0) return null;
+  const [lightboxImages, setLightboxImages] = useState<CookImage[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // If only one cook, don't show selector (auto-select it)
+  if (cooks.length === 0) return null;
   if (cooks.length === 1) return null;
 
   const getCustomerPrice = (cookPrice: number) => {
     const margin = calculatePlatformMargin(cookPrice, platformMarginType, platformMarginValue);
     return cookPrice + margin;
+  };
+
+  const openLightbox = (images: CookImage[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
   };
 
   return (
