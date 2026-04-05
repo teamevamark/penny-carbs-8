@@ -59,12 +59,8 @@ const ItemDetail: React.FC = () => {
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const { selectedPanchayat } = useLocation();
 
-  // Show login dialog for unauthenticated users accessing via shareable link
-  useEffect(() => {
-    if (!authLoading && !user) {
-      setShowLoginDialog(true);
-    }
-  }, [authLoading, user]);
+  // Don't auto-show login dialog - let users browse freely
+  // Login will be prompted when they try to add to cart or buy
 
   const cartItem = cartItems.find(ci => ci.food_item_id === itemId);
   const currentCartQuantity = cartItem?.quantity || 0;
