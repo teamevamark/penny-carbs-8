@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ChefHat, Star, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ChefHat, Star, Sparkles, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 
 export interface CookImage {
@@ -31,14 +32,22 @@ interface CookSelectorProps {
 }
 
 const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSelectCook, basePrice, platformMarginType = 'percent', platformMarginValue = 0 }) => {
-  if (cooks.length === 0) return null;
+  const [lightboxImages, setLightboxImages] = useState<CookImage[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  // If only one cook, don't show selector (auto-select it)
+  if (cooks.length === 0) return null;
   if (cooks.length === 1) return null;
 
   const getCustomerPrice = (cookPrice: number) => {
     const margin = calculatePlatformMargin(cookPrice, platformMarginType, platformMarginValue);
     return cookPrice + margin;
+  };
+
+  const openLightbox = (images: CookImage[], index: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(index);
+    setLightboxOpen(true);
   };
 
   return (
@@ -102,13 +111,17 @@ const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSe
                 </div>
                 {cookImages.length > 0 && (
                   <div className="mt-2 flex gap-2 overflow-x-auto pl-8">
-                    {cookImages.map((img) => (
+                    {cookImages.map((img, idx) => (
                       <img
                         key={img.id}
                         src={img.image_url}
                         alt={`${cook.kitchen_name} dish`}
-                        className="h-16 w-16 rounded-md object-cover border flex-shrink-0"
+                        className="h-16 w-16 rounded-md object-cover border flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-primary transition-all"
                         loading="lazy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openLightbox(cookImages, idx);
+                        }}
                       />
                     ))}
                   </div>
@@ -118,6 +131,54 @@ const CookSelector: React.FC<CookSelectorProps> = ({ cooks, selectedCookId, onSe
           })}
         </div>
       </RadioGroup>
+
+      <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-none flex items-center justify-center">
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-3 right-3 z-50 text-white/70 hover:text-white"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {lightboxImages.length > 1 && (
+            <>
+              <button
+                onClick={() => setLightboxIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length)}
+                className="absolute left-3 z-50 text-white/70 hover:text-white bg-black/40 rounded-full p-1.5"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                onClick={() => setLightboxIndex((prev) => (prev + 1) % lightboxImages.length)}
+                className="absolute right-12 z-50 text-white/70 hover:text-white bg-black/40 rounded-full p-1.5"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+
+          {lightboxImages[lightboxIndex] && (
+            <img
+              src={lightboxImages[lightboxIndex].image_url}
+              alt="Dish image"
+              className="max-w-full max-h-[85vh] object-contain rounded"
+            />
+          )}
+
+          {lightboxImages.length > 1 && (
+            <div className="absolute bottom-4 flex gap-1.5">
+              {lightboxImages.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setLightboxIndex(i)}
+                  className={`w-2 h-2 rounded-full transition-colors ${i === lightboxIndex ? 'bg-white' : 'bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
