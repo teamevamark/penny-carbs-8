@@ -34,6 +34,8 @@ const Checkout: React.FC = () => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deliveryLat, setDeliveryLat] = useState<number | null>(null);
+  const [deliveryLng, setDeliveryLng] = useState<number | null>(null);
   const isUsingSavedAddress = useRef(false);
   const { addresses, createAddress } = useCustomerAddresses();
 
@@ -126,6 +128,8 @@ const Checkout: React.FC = () => {
           ward_number: selectedWardNumber!,
           delivery_address: deliveryAddress,
           delivery_instructions: deliveryInstructions || null,
+          delivery_latitude: deliveryLat,
+          delivery_longitude: deliveryLng,
           ...(isHomemade ? {
             status: 'confirmed' as const,
             cook_status: 'pending',
@@ -300,14 +304,16 @@ const Checkout: React.FC = () => {
             {/* Address Selector with saved addresses */}
             <div className="space-y-2">
               <Label>Select or enter delivery address *</Label>
-              <AddressSelector
+             <AddressSelector
                 selectedAddress={deliveryAddress}
                 onAddressChange={(addr) => {
                   setDeliveryAddress(addr);
                   isUsingSavedAddress.current = false;
                 }}
-                onAddressSelect={() => {
+                onAddressSelect={(address) => {
                   isUsingSavedAddress.current = true;
+                  setDeliveryLat(address.latitude);
+                  setDeliveryLng(address.longitude);
                 }}
               />
             </div>
