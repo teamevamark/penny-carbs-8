@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { MapPin, Plus, Home, Building, Pencil, Trash2, Star, Loader2 } from 'lucide-react';
+import GoogleMapPicker from '@/components/google-maps/GoogleMapPicker';
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,8 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
   const [fullAddress, setFullAddress] = useState('');
   const [landmark, setLandmark] = useState('');
   const [isDefault, setIsDefault] = useState(false);
+  const [addressLat, setAddressLat] = useState<number | null>(null);
+  const [addressLng, setAddressLng] = useState<number | null>(null);
 
   // Set initial selection
   useEffect(() => {
@@ -63,6 +66,8 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     setLandmark('');
     setIsDefault(false);
     setEditingAddress(null);
+    setAddressLat(null);
+    setAddressLng(null);
   };
 
   const openAddDialog = () => {
@@ -76,6 +81,8 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
     setFullAddress(address.full_address);
     setLandmark(address.landmark || '');
     setIsDefault(address.is_default);
+    setAddressLat((address as any).latitude || null);
+    setAddressLng((address as any).longitude || null);
     setShowAddDialog(true);
   };
 
@@ -96,6 +103,8 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
       panchayat_id: selectedPanchayat?.id,
       ward_number: selectedWardNumber || undefined,
       is_default: isDefault,
+      latitude: addressLat || undefined,
+      longitude: addressLng || undefined,
     };
 
     if (editingAddress) {
