@@ -162,21 +162,17 @@ const AdminLocations: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card">
-        <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="font-display text-lg font-semibold">Locations</h1>
-          </div>
+    <div className="bg-background pb-6">
+      {/* Page Header */}
+      <div className="border-b bg-card px-4 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-lg font-semibold">Locations</h1>
           <Button size="sm" onClick={() => handleOpenPanchayatDialog()}>
             <Plus className="mr-2 h-4 w-4" />
             Add Panchayat
           </Button>
         </div>
-      </header>
+      </div>
 
       <main className="p-4">
         {isLoading ? (
