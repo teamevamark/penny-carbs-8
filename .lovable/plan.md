@@ -1,47 +1,21 @@
+## Google Maps Location Integration
 
+### Database Changes
+- Add `latitude` and `longitude` columns to `customer_addresses` table
+- Add `delivery_latitude` and `delivery_longitude` columns to `orders` table
 
-## Fix: Cook Dashboard Image Upload to Cloudinary
+### Components to Create
+1. **GoogleMapPicker** - Reusable map component for selecting a location (used in profile & checkout)
+2. **GoogleMapViewer** - Read-only map component showing a pin (used in delivery/admin)
 
-**Problem**: Cooks cannot upload images because:
-1. The `storage_providers` table has RLS that only allows admins to read — cooks get no data from `useActiveStorageProvider`, so Cloudinary is never used.
-2. The fallback to Supabase Storage also fails because the `food-images` bucket does not exist.
+### Integration Points
+1. **Profile → AddressSelector** - Add map picker in the add/edit address dialog
+2. **Checkout pages** (Checkout.tsx, CloudKitchenCheckout.tsx) - Show map picker for delivery location
+3. **Delivery Dashboard** - Show map viewer on assigned orders
+4. **Admin Orders** - Show location on order details
 
-### Changes Required
-
-**1. Add RLS read policy for cooks on `storage_providers` (SQL migration)**
-- Add a SELECT policy allowing authenticated users (including cooks) to read enabled storage providers
-- This lets the `useActiveStorageProvider` hook return the Cloudinary config for cooks
-
-**2. Create the `food-images` storage bucket (SQL migration)**
-- Create a public `food-images` bucket so the Supabase fallback works
-- Add RLS policies on `storage.objects` allowing authenticated users to upload to this bucket
-
-These two changes together ensure cooks can upload via Cloudinary (primary) with Supabase Storage as a working fallback.
-
-### Technical Detail
-
-New migration with:
-```sql
--- Allow all authenticated users to read storage providers
-CREATE POLICY "Authenticated users can read storage providers"
-ON public.storage_providers FOR SELECT
-TO authenticated
-USING (true);
-
--- Create food-images bucket
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('food-images', 'food-images', true);
-
--- Allow authenticated uploads
-CREATE POLICY "Authenticated users can upload food images"
-ON storage.objects FOR INSERT
-TO authenticated
-WITH CHECK (bucket_id = 'food-images');
-
--- Allow public reads
-CREATE POLICY "Public can read food images"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'food-images');
-```
-
+### Technical Notes
+- Google Maps API key `AIzaSyDf4IPeIB70WoefdwZCbLjg8SLsaMgpzeA` is a publishable key, stored in code as `VITE_GOOGLE_MAPS_API_KEY`
+- Use `@react-google-maps/api` library for React integration
+- Store lat/lng when user picks location on map
+- Default map center: India (10.8505, 76.2711 - Kerala region based on panchayat context)
