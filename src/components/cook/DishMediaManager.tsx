@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Upload, Loader2, X } from 'lucide-react';
+import { Upload, Loader2, X, ChevronDown, Image as ImageIcon, Video } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useActiveStorageProvider, fetchActiveStorageProvider, StorageProvider } from '@/hooks/useStorageProviders';
 
 interface DishImage {
@@ -129,27 +130,23 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [videoUrl, setVideoUrl] = useState(youtubeVideoUrl || '');
   const [savingVideo, setSavingVideo] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const slots = Array.from({ length: MAX_IMAGES }, (_, i) => {
     return images.find(img => img.display_order === i) || null;
   });
 
+  const imageCount = images.length;
+  const hasVideo = !!youtubeVideoUrl;
+
   const uploadToSupabase = async (file: File): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `cook-dishes/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('food-images')
-      .upload(filePath, file);
-
+    const { error: uploadError } = await supabase.storage.from('food-images').upload(filePath, file);
     if (uploadError) throw uploadError;
-
-    const { data: urlData } = supabase.storage
-      .from('food-images')
-      .getPublicUrl(filePath);
-
+    const { data: urlData } = supabase.storage.from('food-images').getPublicUrl(filePath);
     return urlData.publicUrl;
   };
 
@@ -159,7 +156,7 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast({ title: 'File too large', description: 'Maximum image size is 1 MB', variant: 'destructive' });
+      toast({ title: 'File too large', description: 'Maximum image size is 1 MB. File will not be uploaded.', variant: 'destructive' });
       return;
     }
 
@@ -190,7 +187,7 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
         display_order: slotIndex,
       });
       if (error) throw error;
-      toast({ title: 'Image uploaded' });
+      toast({ title: 'Image uploaded & compressed automatically' });
       queryClient.invalidateQueries({ queryKey: ['cook-allocated-dishes'] });
       queryClient.invalidateQueries({ queryKey: ['storage-providers', 'active'] });
     } catch (err: any) {
@@ -251,82 +248,102 @@ const DishMediaManager: React.FC<DishMediaManagerProps> = ({ cookDishId, images,
   };
 
   return (
-    <div className="space-y-3 pt-2">
-      {slots.map((slot, index) => (
-        <div key={index}>
-          <Label className="text-xs font-medium text-foreground">
-            {index === 0 ? 'Image 1 (Upload or paste URL)' : `Image ${index + 1}`}
-          </Label>
-          <div className="flex items-center gap-2 mt-1">
-            {slot ? (
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <img src={slot.image_url} alt={`Image ${index + 1}`} className="h-10 w-10 rounded object-cover border shrink-0" />
-                <span className="text-xs text-muted-foreground truncate flex-1">{slot.image_url.split('/').pop()}</span>
-                <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => handleRemoveImage(index)}>
-                  <X className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
-            ) : (
-              <>
-                <Input
-                  placeholder="Image URL or upload"
-                  className="h-9 text-sm flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSaveUrl(index, (e.target as HTMLInputElement).value);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    if (e.target.value.trim()) {
-                      handleSaveUrl(index, e.target.value);
-                    }
-                  }}
-                />
-                <input
-                  ref={(el) => { fileInputRefs.current[index] = el; }}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleFileUpload(index, file);
-                    e.target.value = '';
-                  }}
-                />
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="h-9 w-9 shrink-0"
-                  disabled={uploadingSlot === index}
-                  onClick={() => fileInputRefs.current[index]?.click()}
-                >
-                  {uploadingSlot === index ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Upload className="h-4 w-4" />
-                  )}
-                </Button>
-              </>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="pt-2">
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" size="sm" className="w-full justify-between h-8 px-2 text-xs text-muted-foreground hover:text-foreground">
+          <span className="flex items-center gap-1.5">
+            <ImageIcon className="h-3.5 w-3.5" />
+            Media
+            {imageCount > 0 && (
+              <span className="bg-primary/10 text-primary text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+                {imageCount} img{imageCount > 1 ? 's' : ''}
+              </span>
             )}
+            {hasVideo && (
+              <span className="bg-primary/10 text-primary text-[10px] font-medium px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                <Video className="h-2.5 w-2.5" /> video
+              </span>
+            )}
+          </span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </Button>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent className="space-y-3 pt-1">
+        <p className="text-[10px] text-muted-foreground px-1">Max 1 MB per image · Auto-compressed to ~100 KB</p>
+
+        {slots.map((slot, index) => (
+          <div key={index}>
+            <Label className="text-xs font-medium text-foreground">
+              {index === 0 ? 'Image 1 (Upload or paste URL)' : `Image ${index + 1}`}
+            </Label>
+            <div className="flex items-center gap-2 mt-1">
+              {slot ? (
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <img src={slot.image_url} alt={`Image ${index + 1}`} className="h-10 w-10 rounded object-cover border shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate flex-1">{slot.image_url.split('/').pop()}</span>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={() => handleRemoveImage(index)}>
+                    <X className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Input
+                    placeholder="Image URL or upload"
+                    className="h-9 text-sm flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveUrl(index, (e.target as HTMLInputElement).value);
+                    }}
+                    onBlur={(e) => {
+                      if (e.target.value.trim()) handleSaveUrl(index, e.target.value);
+                    }}
+                  />
+                  <input
+                    ref={(el) => { fileInputRefs.current[index] = el; }}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(index, file);
+                      e.target.value = '';
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-9 w-9 shrink-0"
+                    disabled={uploadingSlot === index}
+                    onClick={() => fileInputRefs.current[index]?.click()}
+                  >
+                    {uploadingSlot === index ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="h-4 w-4" />
+                    )}
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+        ))}
+
+        <div>
+          <Label className="text-xs font-medium text-foreground">Video URL</Label>
+          <div className="flex items-center gap-2 mt-1">
+            <Input
+              placeholder="Paste YouTube or video link"
+              className="h-9 text-sm flex-1"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              onBlur={handleSaveVideoUrl}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(); }}
+            />
+            {savingVideo && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
         </div>
-      ))}
-
-      <div>
-        <Label className="text-xs font-medium text-foreground">Video URL</Label>
-        <div className="flex items-center gap-2 mt-1">
-          <Input
-            placeholder="Paste YouTube or video link"
-            className="h-9 text-sm flex-1"
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            onBlur={handleSaveVideoUrl}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveVideoUrl(); }}
-          />
-          {savingVideo && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-        </div>
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
