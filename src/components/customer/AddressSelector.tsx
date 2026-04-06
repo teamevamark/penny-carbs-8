@@ -320,6 +320,18 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
                 onChange={(e) => setLandmark(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Pin Location on Map (Optional)</Label>
+              <GoogleMapPicker
+                latitude={addressLat}
+                longitude={addressLng}
+                onLocationChange={(lat, lng) => {
+                  setAddressLat(lat);
+                  setAddressLng(lng);
+                }}
+                height="200px"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
