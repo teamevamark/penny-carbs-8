@@ -336,10 +336,7 @@ const AdminAdmins: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNavbar />
-
-      {/* Page Header */}
+    <div className="bg-background pb-6">
       <div className="border-b bg-card px-4 py-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Admin Management</h2>

@@ -223,8 +223,7 @@ const AdminWorkAssignment: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AdminNavbar />
+    <div className="bg-background pb-6">
 
       <main className="p-4">
         <div className="mb-4 flex items-center gap-4">
