@@ -194,8 +194,10 @@ const CloudKitchenCheckout: React.FC = () => {
           ward_number: selectedWardNumber!,
           delivery_address: deliveryAddress,
           delivery_instructions: deliveryInstructions || null,
+          delivery_latitude: deliveryLat,
+          delivery_longitude: deliveryLng,
           cloud_kitchen_slot_id: division.id,
-          status: 'pending', // Pending until cook accepts
+          status: 'pending',
           cook_status: 'pending',
           delivery_status: 'pending',
           cook_assignment_status: 'pending',
