@@ -18,6 +18,7 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 import Profile from "./pages/Profile";
+import SavedAddresses from "./pages/SavedAddresses";
 import NotFound from "./pages/NotFound";
 import IndoorEventBooking from "./pages/IndoorEventBooking";
 import CloudKitchenOrder from "./pages/CloudKitchenOrder";
@@ -93,6 +94,7 @@ const App = () => (
                 <Route path="/orders" element={<Orders />} />
                 <Route path="/order/:orderId" element={<OrderDetail />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/addresses" element={<SavedAddresses />} />
                 
                 {/* Cook Routes */}
                 <Route path="/cook/login" element={<CookLogin />} />
