@@ -744,7 +744,7 @@ const AdminCooks: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </header>
+      </div>
 
       <main className="container px-4 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>

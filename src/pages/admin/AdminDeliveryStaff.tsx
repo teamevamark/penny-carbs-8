@@ -729,7 +729,7 @@ const AdminDeliveryStaff: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </header>
+      </div>
 
       {/* Edit/Manage Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => { setIsEditDialogOpen(open); if (!open) setEditingStaff(null); }}>
