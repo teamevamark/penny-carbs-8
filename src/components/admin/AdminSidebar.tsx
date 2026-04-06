@@ -148,7 +148,7 @@ const AdminSidebar: React.FC = () => {
         </SidebarGroup>
 
         {/* Operational Modules */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Modules</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderMenuItems(moduleItems)}</SidebarMenu>
@@ -156,7 +156,7 @@ const AdminSidebar: React.FC = () => {
         </SidebarGroup>
 
         {/* Management */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Management</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderMenuItems(managementItems)}</SidebarMenu>
@@ -164,7 +164,7 @@ const AdminSidebar: React.FC = () => {
         </SidebarGroup>
 
         {/* Settings & Reports */}
-        <SidebarGroup defaultOpen>
+        <SidebarGroup>
           <SidebarGroupLabel>Settings & Reports</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>{renderMenuItems(settingsItems)}</SidebarMenu>
@@ -173,7 +173,7 @@ const AdminSidebar: React.FC = () => {
 
         {/* Super Admin */}
         {superAdminItems.length > 0 && (
-          <SidebarGroup defaultOpen>
+          <SidebarGroup>
             <SidebarGroupLabel>Super Admin</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>{renderMenuItems(superAdminItems)}</SidebarMenu>
