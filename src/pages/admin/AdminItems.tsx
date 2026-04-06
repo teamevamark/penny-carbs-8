@@ -42,7 +42,6 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ComboFoodsTab from '@/components/admin/ComboFoodsTab';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
@@ -379,10 +378,7 @@ const AdminItems: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-28">
-      <AdminNavbar />
-
-      {/* Page Header */}
+    <div className="bg-background pb-6">
       <div className="border-b bg-card px-4 py-4">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg font-semibold">Food Items</h2>

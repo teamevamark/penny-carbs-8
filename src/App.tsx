@@ -38,7 +38,8 @@ import CookDashboard from "./pages/cook/CookDashboard";
 import DeliveryApply from "./pages/delivery/DeliveryApply";
 import DeliveryDashboard from "./pages/delivery/DeliveryDashboard";
 
-// Admin Pages
+// Admin Layout & Pages
+import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminItems from "./pages/admin/AdminItems";
@@ -104,29 +105,27 @@ const App = () => (
                 <Route path="/delivery/apply" element={<DeliveryApply />} />
                 <Route path="/delivery/dashboard" element={<DeliveryDashboard />} />
                 
-                {/* Admin Routes - Main Dashboard */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                
-                {/* Admin Module Routes */}
-                <Route path="/admin/indoor-events/*" element={<IndoorEventsModule />} />
-                <Route path="/admin/cloud-kitchen/*" element={<CloudKitchenModule />} />
-                <Route path="/admin/home-delivery/*" element={<HomeDeliveryModule />} />
-                
-                {/* Admin Common Utilities */}
-                <Route path="/admin/users" element={<AdminUsers />} />
-                <Route path="/admin/orders" element={<AdminOrders />} />
-                <Route path="/admin/items" element={<AdminItems />} />
-                <Route path="/admin/categories" element={<AdminCategories />} />
-                <Route path="/admin/locations" element={<AdminLocations />} />
-                <Route path="/admin/cooks" element={<AdminCooks />} />
-                <Route path="/admin/cooks/:cookId" element={<AdminCookProfile />} />
-                <Route path="/admin/delivery-staff" element={<AdminDeliveryStaff />} />
-                <Route path="/admin/reports" element={<AdminReports />} />
-                <Route path="/admin/banners" element={<AdminBanners />} />
-                <Route path="/admin/special-offers" element={<AdminSpecialOffers />} />
-                <Route path="/admin/admins" element={<AdminAdmins />} />
-                <Route path="/admin/work-assignment" element={<AdminWorkAssignment />} />
-                <Route path="/admin/storage-settings" element={<AdminStorageSettings />} />
+                {/* Admin Routes - Wrapped in AdminLayout with Sidebar */}
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="indoor-events/*" element={<IndoorEventsModule />} />
+                  <Route path="cloud-kitchen/*" element={<CloudKitchenModule />} />
+                  <Route path="home-delivery/*" element={<HomeDeliveryModule />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="orders" element={<AdminOrders />} />
+                  <Route path="items" element={<AdminItems />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="locations" element={<AdminLocations />} />
+                  <Route path="cooks" element={<AdminCooks />} />
+                  <Route path="cooks/:cookId" element={<AdminCookProfile />} />
+                  <Route path="delivery-staff" element={<AdminDeliveryStaff />} />
+                  <Route path="reports" element={<AdminReports />} />
+                  <Route path="banners" element={<AdminBanners />} />
+                  <Route path="special-offers" element={<AdminSpecialOffers />} />
+                  <Route path="admins" element={<AdminAdmins />} />
+                  <Route path="work-assignment" element={<AdminWorkAssignment />} />
+                  <Route path="storage-settings" element={<AdminStorageSettings />} />
+                </Route>
                 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />

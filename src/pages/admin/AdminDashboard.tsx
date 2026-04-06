@@ -1,196 +1,194 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAdminDeliveryAlerts } from '@/hooks/useDeliveryNotifications';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import UnacceptedOrdersAlert from '@/components/admin/UnacceptedOrdersAlert';
-import { Switch } from '@/components/ui/switch';
 import { useServiceModules, useToggleServiceModule } from '@/hooks/useServiceModules';
-import { 
-  CalendarHeart,
-  ChefHat,
-  Home,
-  Settings,
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import {
+  ShoppingBag,
   Users,
-  MapPin,
-  Image,
-  BarChart3,
-  LogOut,
-  ArrowLeft,
+  ChefHat,
   Truck,
-  ClipboardList,
-  Tag,
-  Utensils,
-  FolderOpen,
-  AlertTriangle
+  TrendingUp,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  IndianRupee,
+  CalendarHeart,
+  Home,
+  Package,
 } from 'lucide-react';
+import { format, subDays, startOfDay } from 'date-fns';
+
+function useAdminStats() {
+  return useQuery({
+    queryKey: ['admin-dashboard-stats'],
+    queryFn: async () => {
+      const today = startOfDay(new Date()).toISOString();
+      const last7Days = subDays(new Date(), 7).toISOString();
+
+      const [
+        ordersToday,
+        ordersPending,
+        ordersDelivered,
+        totalOrders,
+        totalCooks,
+        totalDelivery,
+        totalCustomers,
+        revenueToday,
+        revenueLast7,
+        unassignedOrders,
+      ] = await Promise.all([
+        supabase.from('orders').select('id', { count: 'exact', head: true }).gte('created_at', today),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'delivered'),
+        supabase.from('orders').select('id', { count: 'exact', head: true }),
+        supabase.from('cooks').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('delivery_staff').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+        supabase.from('orders').select('total_amount').gte('created_at', today).eq('status', 'delivered'),
+        supabase.from('orders').select('total_amount').gte('created_at', last7Days).eq('status', 'delivered'),
+        supabase.from('orders').select('id', { count: 'exact', head: true })
+          .eq('status', 'pending')
+          .is('assigned_cook_id', null)
+          .in('service_type', ['cloud_kitchen', 'homemade']),
+      ]);
+
+      const todayRevenue = (revenueToday.data || []).reduce((sum, o) => sum + (o.total_amount || 0), 0);
+      const weekRevenue = (revenueLast7.data || []).reduce((sum, o) => sum + (o.total_amount || 0), 0);
+
+      return {
+        ordersToday: ordersToday.count || 0,
+        ordersPending: ordersPending.count || 0,
+        ordersDelivered: ordersDelivered.count || 0,
+        totalOrders: totalOrders.count || 0,
+        totalCooks: totalCooks.count || 0,
+        totalDelivery: totalDelivery.count || 0,
+        totalCustomers: totalCustomers.count || 0,
+        todayRevenue,
+        weekRevenue,
+        unassignedOrders: unassignedOrders.count || 0,
+      };
+    },
+    refetchInterval: 60000,
+  });
+}
+
+function useRecentOrders() {
+  return useQuery({
+    queryKey: ['admin-recent-orders'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id, order_number, service_type, total_amount, status, delivery_status, cook_status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(8);
+      if (error) throw error;
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+}
+
+const statusColors: Record<string, string> = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  confirmed: 'bg-blue-100 text-blue-800',
+  preparing: 'bg-purple-100 text-purple-800',
+  ready: 'bg-cyan-100 text-cyan-800',
+  delivered: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
+};
+
+const serviceIcons: Record<string, React.ElementType> = {
+  indoor_events: CalendarHeart,
+  cloud_kitchen: ChefHat,
+  homemade: Home,
+};
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { profile, role, signOut } = useAuth();
-  const { 
-    unacceptedOrders, 
-    showAdminAlert, 
-    dismissAdminAlert, 
-    removeAdminAlert 
-  } = useAdminDeliveryAlerts();
-
-  const isAdmin = role === 'super_admin' || role === 'admin';
+  const { role } = useAuth();
+  const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: recentOrders } = useRecentOrders();
   const { data: serviceModules } = useServiceModules();
   const toggleModule = useToggleServiceModule();
 
-  if (!isAdmin) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-        <Settings className="h-16 w-16 text-muted-foreground" />
-        <h2 className="mt-4 text-xl font-semibold">Access Denied</h2>
-        <p className="mt-2 text-center text-muted-foreground">
-          You don't have permission to access this page
-        </p>
-        <Button className="mt-6" onClick={() => navigate('/')}>
-          Go Home
-        </Button>
-      </div>
-    );
-  }
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
-  };
+  const kpiCards = [
+    { label: 'Orders Today', value: stats?.ordersToday ?? '-', icon: ShoppingBag, color: 'text-blue-600 bg-blue-50' },
+    { label: 'Pending Orders', value: stats?.ordersPending ?? '-', icon: Clock, color: 'text-yellow-600 bg-yellow-50' },
+    { label: "Today's Revenue", value: `₹${stats?.todayRevenue?.toLocaleString() ?? '0'}`, icon: IndianRupee, color: 'text-green-600 bg-green-50' },
+    { label: 'Week Revenue', value: `₹${stats?.weekRevenue?.toLocaleString() ?? '0'}`, icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Total Delivered', value: stats?.ordersDelivered ?? '-', icon: CheckCircle2, color: 'text-green-600 bg-green-50' },
+    { label: 'Unassigned', value: stats?.unassignedOrders ?? '-', icon: AlertTriangle, color: 'text-red-600 bg-red-50' },
+    { label: 'Active Cooks', value: stats?.totalCooks ?? '-', icon: ChefHat, color: 'text-orange-600 bg-orange-50' },
+    { label: 'Delivery Staff', value: stats?.totalDelivery ?? '-', icon: Truck, color: 'text-purple-600 bg-purple-50' },
+  ];
 
   const modules = [
-    {
-      id: 'indoor-events',
-      title: 'Indoor Events Management',
-      description: 'Manage event bookings, planning requests, quotations, cook assignments, and commission tracking',
-      icon: CalendarHeart,
-      path: '/admin/indoor-events',
-      gradient: 'from-indoor-events to-indoor-events/70',
-      features: ['Event Bookings', 'Planning Requests', 'Cook Assignment', 'Commission Tracking']
-    },
-    {
-      id: 'cloud-kitchen',
-      title: 'Cloud Kitchen Management',
-      description: 'Time-slot based menu control, live orders, cook & delivery assignments, and performance reports',
-      icon: ChefHat,
-      path: '/admin/cloud-kitchen',
-      gradient: 'from-cloud-kitchen to-cloud-kitchen/70',
-      features: ['Time-Slot Menus', 'Live Orders', 'Cook Management', 'Sales Reports']
-    },
-    {
-      id: 'home-delivery',
-      title: 'Home Food Delivery Management',
-      description: 'Instant orders, auto ETA, delivery assignments, cash collection, and settlement tracking',
-      icon: Home,
-      path: '/admin/home-delivery',
-      gradient: 'from-homemade to-homemade/70',
-      features: ['Instant Orders', 'Delivery Tracking', 'Cash Settlement', 'Ward Reports']
-    }
-  ];
-
-  const commonUtilities = [
-    { icon: ClipboardList, label: 'All Orders', path: '/admin/orders', description: 'Order History' },
-    { icon: FolderOpen, label: 'Categories', path: '/admin/categories', description: 'Dish Categories' },
-    { icon: Utensils, label: 'Food Items', path: '/admin/items', description: 'Manage Dishes' },
-    { icon: ChefHat, label: 'Cook Management', path: '/admin/cooks', description: 'Add & Manage Cooks' },
-    { icon: Truck, label: 'Delivery Staff', path: '/admin/delivery-staff', description: 'Manage Delivery' },
-    { icon: ClipboardList, label: 'Work Assignment', path: '/admin/work-assignment', description: 'Assign Orders' },
-    { icon: Users, label: 'User Management', path: '/admin/users', description: 'Customers & Staff' },
-    { icon: MapPin, label: 'Locations', path: '/admin/locations', description: 'Panchayats & Wards' },
-    { icon: Image, label: 'Banners', path: '/admin/banners', description: 'Promotions' },
-    { icon: Tag, label: 'Special Offers', path: '/admin/special-offers', description: 'Offer Cards' },
-    { icon: BarChart3, label: 'Reports', path: '/admin/reports', description: 'Analytics' },
-    { icon: Image, label: 'Storage Settings', path: '/admin/storage-settings', description: 'External Storage' },
-  ];
-
-  const superAdminUtilities = [
-    { icon: Settings, label: 'Admin Management', path: '/admin/admins', description: 'Roles & Permissions' },
+    { id: 'indoor-events', svc: 'indoor_events', title: 'Indoor Events', icon: CalendarHeart, path: '/admin/indoor-events', gradient: 'from-indoor-events to-indoor-events/70' },
+    { id: 'cloud-kitchen', svc: 'cloud_kitchen', title: 'Cloud Kitchen', icon: ChefHat, path: '/admin/cloud-kitchen', gradient: 'from-cloud-kitchen to-cloud-kitchen/70' },
+    { id: 'home-delivery', svc: 'homemade', title: 'Home Delivery', icon: Home, path: '/admin/home-delivery', gradient: 'from-homemade to-homemade/70' },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Unaccepted Orders Alert for Admin */}
-      <UnacceptedOrdersAlert
-        open={showAdminAlert}
-        orders={unacceptedOrders}
-        onDismiss={dismissAdminAlert}
-        onRemove={removeAdminAlert}
-      />
-
+    <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card">
-        <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="font-display text-lg font-semibold">Admin Panel</h1>
-            {unacceptedOrders.length > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="animate-pulse cursor-pointer"
-                onClick={() => dismissAdminAlert()}
-              >
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {unacceptedOrders.length} Unassigned
-              </Badge>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
-          </Button>
-        </div>
-      </header>
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Overview of your Penny Carbs operations</p>
+      </div>
 
-      <main className="p-4 pb-20">
-        {/* Welcome Card */}
-        <Card className="mb-6 bg-gradient-to-r from-primary/10 to-primary/5">
-          <CardContent className="p-6">
-            <h2 className="text-xl font-semibold">Welcome, {profile?.name || 'Admin'}!</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Select a module to manage your Penny Carbs operations
-            </p>
-          </CardContent>
-        </Card>
+      {/* KPI Grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {kpiCards.map((kpi) => (
+          <Card key={kpi.label} className="overflow-hidden">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className={`rounded-lg p-2.5 ${kpi.color}`}>
+                <kpi.icon className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground truncate">{kpi.label}</p>
+                <p className="text-xl font-bold">{statsLoading ? '...' : kpi.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-        {/* Module Cards */}
-        <h3 className="mb-4 text-lg font-semibold">Operational Modules</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module) => {
-            const serviceTypeMap: Record<string, string> = {
-              'indoor-events': 'indoor_events',
-              'cloud-kitchen': 'cloud_kitchen',
-              'home-delivery': 'homemade',
-            };
-            const svcType = serviceTypeMap[module.id];
-            const svcModule = serviceModules?.find((m) => m.service_type === svcType);
+      {/* Operational Modules */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Operational Modules</h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {modules.map((mod) => {
+            const svcModule = serviceModules?.find((m) => m.service_type === mod.svc);
             const isActive = svcModule?.is_active ?? true;
 
             return (
-              <Card 
-                key={module.id}
-                className={`transition-all hover:shadow-md ${!isActive ? 'opacity-60' : ''}`}
+              <Card
+                key={mod.id}
+                className={`transition-all hover:shadow-md cursor-pointer ${!isActive ? 'opacity-60' : ''}`}
+                onClick={() => navigate(mod.path)}
               >
-                <CardContent className="flex items-center gap-4 p-4">
-                  <div 
-                    className={`rounded-xl bg-gradient-to-br ${module.gradient} p-3 text-white cursor-pointer`}
-                    onClick={() => navigate(module.path)}
-                  >
-                    <module.icon className="h-6 w-6" />
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className={`rounded-xl bg-gradient-to-br ${mod.gradient} p-3 text-white`}>
+                    <mod.icon className="h-5 w-5" />
                   </div>
-                  <div className="flex-1 cursor-pointer" onClick={() => navigate(module.path)}>
-                    <h4 className="font-medium">{module.title}</h4>
-                    <p className="text-sm text-muted-foreground">{module.description.split(',')[0]}</p>
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{mod.title}</h4>
+                    <Badge variant={isActive ? 'default' : 'secondary'} className="text-xs mt-1">
+                      {isActive ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
                   {role === 'super_admin' && svcModule && (
                     <Switch
                       checked={isActive}
-                      onCheckedChange={(checked) =>
-                        toggleModule.mutate({ id: svcModule.id, is_active: checked })
-                      }
+                      onCheckedChange={(checked) => {
+                        toggleModule.mutate({ id: svcModule.id, is_active: checked });
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                     />
                   )}
                 </CardContent>
@@ -198,47 +196,85 @@ const AdminDashboard: React.FC = () => {
             );
           })}
         </div>
+      </div>
 
-        {/* Common Utilities */}
-        <h3 className="mb-4 mt-8 text-lg font-semibold">Common Utilities</h3>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {commonUtilities.map((item) => (
-            <Card 
-              key={item.path}
-              className="cursor-pointer transition-all hover:shadow-md"
-              onClick={() => navigate(item.path)}
-            >
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="rounded-xl bg-primary/10 p-3 text-primary">
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="font-medium">{item.label}</h4>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {/* Quick Stats Row */}
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Recent Orders */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Recent Orders
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y">
+              {(recentOrders || []).map((order) => {
+                const SvcIcon = serviceIcons[order.service_type] || ShoppingBag;
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(`/order/${order.id}`)}
+                  >
+                    <SvcIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">#{order.order_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(order.created_at), 'dd MMM, hh:mm a')}
+                      </p>
+                    </div>
+                    <span className="text-sm font-medium">₹{order.total_amount}</span>
+                    <Badge className={`text-xs ${statusColors[order.status] || ''}`}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                );
+              })}
+              {(!recentOrders || recentOrders.length === 0) && (
+                <p className="p-4 text-center text-sm text-muted-foreground">No recent orders</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-          {role === 'super_admin' && superAdminUtilities.map((item) => (
-            <Card 
-              key={item.path}
-              className="cursor-pointer border-destructive/20 transition-all hover:shadow-md"
-              onClick={() => navigate(item.path)}
-            >
-              <CardContent className="flex items-center gap-4 p-4">
-                <div className="rounded-xl bg-destructive/10 p-3 text-destructive">
-                  <item.icon className="h-6 w-6" />
-                </div>
-                <div>
-                  <h4 className="font-medium">{item.label}</h4>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </main>
+        {/* Summary Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total Orders (All Time)</span>
+              <span className="font-semibold">{stats?.totalOrders ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total Customers</span>
+              <span className="font-semibold">{stats?.totalCustomers ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Active Cooks</span>
+              <span className="font-semibold">{stats?.totalCooks ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Active Delivery Staff</span>
+              <span className="font-semibold">{stats?.totalDelivery ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Delivered Orders</span>
+              <span className="font-semibold text-green-600">{stats?.ordersDelivered ?? '-'}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Pending Orders</span>
+              <span className="font-semibold text-yellow-600">{stats?.ordersPending ?? '-'}</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

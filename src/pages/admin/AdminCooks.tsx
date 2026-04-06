@@ -493,16 +493,11 @@ const AdminCooks: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="bg-background pb-6">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-lg font-semibold">Cook Management</h1>
-          </div>
+      <div className="border-b bg-card px-4 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold">Cook Management</h1>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -749,7 +744,7 @@ const AdminCooks: React.FC = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </header>
+      </div>
 
       <main className="container px-4 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>

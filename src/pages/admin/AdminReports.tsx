@@ -102,18 +102,11 @@ const AdminReports: React.FC = () => {
   const pieColors = ['hsl(var(--success))', 'hsl(var(--destructive))', 'hsl(var(--warning))'];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-card">
-        <div className="flex h-16 items-center gap-3 px-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/admin')}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="font-display text-lg font-semibold">Reports & Analytics</h1>
-            <p className="text-xs text-muted-foreground">View and export reports</p>
-          </div>
-        </div>
-      </header>
+    <div className="bg-background pb-6">
+      <div className="border-b bg-card px-4 py-4">
+        <h1 className="font-display text-lg font-semibold">Reports & Analytics</h1>
+        <p className="text-xs text-muted-foreground">View and export reports</p>
+      </div>
 
       <main className="p-4">
         {/* Filters */}

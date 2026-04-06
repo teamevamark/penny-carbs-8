@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -233,8 +232,7 @@ const AdminStorageSettings: React.FC = () => {
   const preset = selectedPreset ? PROVIDER_PRESETS[selectedPreset] : null;
 
   return (
-    <div className="min-h-screen bg-background pt-28">
-      <AdminNavbar />
+    <div className="bg-background pb-6">
 
       <main className="mx-auto max-w-4xl p-4 pb-20">
         {/* Page header */}
