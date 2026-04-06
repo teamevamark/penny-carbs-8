@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle, ChevronDown, MapPin, User, UtensilsCrossed, Phone, MessageCircle } from 'lucide-react';
+import GoogleMapViewer from '@/components/google-maps/GoogleMapViewer';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -466,6 +467,15 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                                     <p className="text-muted-foreground italic">Note: {order.delivery_instructions}</p>
                                   )}
                                 </div>
+                                {/* Google Map Location */}
+                                {(order as any).delivery_latitude && (order as any).delivery_longitude && (
+                                  <GoogleMapViewer
+                                    latitude={(order as any).delivery_latitude}
+                                    longitude={(order as any).delivery_longitude}
+                                    height="150px"
+                                    label="Delivery Pin"
+                                  />
+                                )}
                               </div>
 
                               {/* Cook Info */}
