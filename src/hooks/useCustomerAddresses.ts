@@ -12,6 +12,8 @@ export interface CustomerAddress {
   panchayat_id: string | null;
   ward_number: number | null;
   is_default: boolean;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +25,8 @@ export interface CreateAddressInput {
   panchayat_id?: string;
   ward_number?: number;
   is_default?: boolean;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const useCustomerAddresses = () => {
@@ -69,6 +73,8 @@ export const useCustomerAddresses = () => {
           panchayat_id: input.panchayat_id || null,
           ward_number: input.ward_number || null,
           is_default: input.is_default || false,
+          latitude: input.latitude || null,
+          longitude: input.longitude || null,
         })
         .select()
         .single();
