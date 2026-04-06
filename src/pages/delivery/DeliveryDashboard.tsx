@@ -423,6 +423,19 @@ const DeliveryDashboard: React.FC = () => {
                           )}
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSaveCustomerLocation(order.id, order.customer_id)}
+                            disabled={savingLocationOrderId === order.id}
+                          >
+                            {savingLocationOrderId === order.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <MapPin className="h-4 w-4 mr-1" />
+                            )}
+                            Save Location
+                          </Button>
                           {order.delivery_status === 'assigned' && (
                             <Button
                               size="sm"
