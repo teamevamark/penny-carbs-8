@@ -59,6 +59,7 @@ const DeliveryDashboard: React.FC = () => {
   const { signOut } = useAuth();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [savingLocationOrderId, setSavingLocationOrderId] = useState<string | null>(null);
   
   const { data: profile, isLoading: profileLoading } = useDeliveryProfile();
   const { data: wallet } = useDeliveryWallet();
