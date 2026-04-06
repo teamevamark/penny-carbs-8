@@ -42,7 +42,6 @@ import {
   Package
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import ImageUpload from '@/components/admin/ImageUpload';
 import ComboFoodsTab from '@/components/admin/ComboFoodsTab';
 import { calculatePlatformMargin } from '@/lib/priceUtils';

@@ -24,7 +24,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, ChefHat, Truck, ClipboardList, Loader2, AlertTriangle } from 'lucide-react';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import { format } from 'date-fns';
 
 interface OrderWithItems {

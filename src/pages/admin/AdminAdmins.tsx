@@ -28,7 +28,6 @@ import {
   UserSearch
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 
 interface AdminUser {
   id: string;

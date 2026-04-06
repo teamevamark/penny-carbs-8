@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, ChefHat, Truck } from 'lucide-react';
 import { toast } from 'sonner';
-import AdminNavbar from '@/components/admin/AdminNavbar';
 import UsersFilters from '@/components/admin/users/UsersFilters';
 import CustomersTable from '@/components/admin/users/CustomersTable';
 import CooksTable from '@/components/admin/users/CooksTable';
