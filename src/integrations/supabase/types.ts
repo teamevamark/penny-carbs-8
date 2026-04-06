@@ -722,6 +722,8 @@ export type Database = {
           id: string
           is_default: boolean
           landmark: string | null
+          latitude: number | null
+          longitude: number | null
           panchayat_id: string | null
           updated_at: string
           user_id: string
@@ -734,6 +736,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
           panchayat_id?: string | null
           updated_at?: string
           user_id: string
@@ -746,6 +750,8 @@ export type Database = {
           id?: string
           is_default?: boolean
           landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
           panchayat_id?: string | null
           updated_at?: string
           user_id?: string
@@ -1550,6 +1556,8 @@ export type Database = {
           delivery_earnings: number | null
           delivery_eta: string | null
           delivery_instructions: string | null
+          delivery_latitude: number | null
+          delivery_longitude: number | null
           delivery_status: string | null
           estimated_delivery_minutes: number | null
           event_date: string | null
@@ -1592,6 +1600,8 @@ export type Database = {
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null
+          delivery_latitude?: number | null
+          delivery_longitude?: number | null
           delivery_status?: string | null
           estimated_delivery_minutes?: number | null
           event_date?: string | null
@@ -1634,6 +1644,8 @@ export type Database = {
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null
+          delivery_latitude?: number | null
+          delivery_longitude?: number | null
           delivery_status?: string | null
           estimated_delivery_minutes?: number | null
           event_date?: string | null
