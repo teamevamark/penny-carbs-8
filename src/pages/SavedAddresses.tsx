@@ -181,7 +181,7 @@ const SavedAddresses: React.FC = () => {
       <BottomNav />
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingAddress ? 'Edit Address' : 'Add New Address'}</DialogTitle>
             <DialogDescription>Save your address for faster checkout</DialogDescription>
