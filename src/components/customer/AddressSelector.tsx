@@ -276,7 +276,7 @@ const AddressSelector: React.FC<AddressSelectorProps> = ({
 
       {/* Add/Edit Address Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingAddress ? 'Edit Address' : 'Add New Address'}
