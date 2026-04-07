@@ -221,7 +221,45 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
     fetchOrders();
   }, [statusFilter, serviceType]);
 
+  const handleCalculateDistance = (order: OrderWithProfile) => {
+    const details = orderDetails[order.id];
+    const cookLat = details?.cook?.latitude;
+    const cookLng = details?.cook?.longitude;
+    const custLat = (order as any).delivery_latitude;
+    const custLng = (order as any).delivery_longitude;
 
+    if (cookLat && cookLng && custLat && custLng) {
+      const dist = calculateDistanceKm(cookLat, cookLng, custLat, custLng);
+      setEditingDistance(prev => ({ ...prev, [order.id]: String(dist) }));
+    } else {
+      toast({ title: 'Missing Coordinates', description: 'Cook or customer location coordinates are not available', variant: 'destructive' });
+    }
+  };
+
+  const handleSaveDistance = async (orderId: string) => {
+    const distVal = parseFloat(editingDistance[orderId]);
+    if (isNaN(distVal) || distVal < 0) {
+      toast({ title: 'Invalid Distance', description: 'Please enter a valid distance', variant: 'destructive' });
+      return;
+    }
+    setSavingDistance(prev => ({ ...prev, [orderId]: true }));
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ delivery_distance_km: distVal, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+      if (error) throw error;
+      toast({ title: 'Saved', description: `Distance updated to ${distVal} km` });
+      // Update local state
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, delivery_distance_km: distVal } : o));
+      setEditingDistance(prev => { const n = { ...prev }; delete n[orderId]; return n; });
+    } catch (error) {
+      console.error('Error saving distance:', error);
+      toast({ title: 'Error', description: 'Failed to save distance', variant: 'destructive' });
+    } finally {
+      setSavingDistance(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
 
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus, reason?: string) => {
     try {
