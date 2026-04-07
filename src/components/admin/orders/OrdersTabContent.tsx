@@ -78,7 +78,8 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [orderDetails, setOrderDetails] = useState<Record<string, OrderDetail>>({});
   const [loadingDetails, setLoadingDetails] = useState<Record<string, boolean>>({});
-
+  const [editingDistance, setEditingDistance] = useState<Record<string, string>>({});
+  const [savingDistance, setSavingDistance] = useState<Record<string, boolean>>({});
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
