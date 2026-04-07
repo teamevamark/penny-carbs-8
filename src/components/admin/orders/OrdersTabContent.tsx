@@ -169,7 +169,7 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
       if (order.assigned_cook_id) {
         const { data: cookData } = await supabase
           .from('cooks')
-          .select('kitchen_name, mobile_number')
+          .select('kitchen_name, mobile_number, latitude, longitude')
           .eq('id', order.assigned_cook_id)
           .single();
         cook = cookData;
