@@ -350,3 +350,24 @@ export function useUpdateCookAvailability() {
     },
   });
 }
+
+export function useUpdateCookLocation() {
+  const queryClient = useQueryClient();
+  const { data: profile } = useCookProfile();
+
+  return useMutation({
+    mutationFn: async ({ latitude, longitude }: { latitude: number; longitude: number }) => {
+      if (!profile?.id) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('cooks')
+        .update({ latitude, longitude, updated_at: new Date().toISOString() })
+        .eq('id', profile.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cook-profile'] });
+    },
+  });
+}
