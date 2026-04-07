@@ -105,9 +105,11 @@ const DeliveryRulesTab: React.FC = () => {
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span>Min Charge:</span>
               <span className="font-medium text-foreground">₹{rule.min_delivery_charge}</span>
+              <span>Base Distance:</span>
+              <span className="font-medium text-foreground">{(rule as any).base_distance_km ?? 5} km</span>
               {rule.per_km_charge != null && rule.per_km_charge > 0 && (
                 <>
-                  <span>Per KM:</span>
+                  <span>Per KM (extra):</span>
                   <span className="font-medium text-foreground">₹{rule.per_km_charge}</span>
                 </>
               )}
