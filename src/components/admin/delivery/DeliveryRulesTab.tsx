@@ -26,7 +26,7 @@ const DeliveryRulesTab: React.FC = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
 
-  const [form, setForm] = useState<DeliveryRuleInput>({
+  const [form, setForm] = useState<DeliveryRuleInput & { base_distance_km?: number }>({
     service_type: 'cloud_kitchen',
     rule_name: '',
     min_delivery_charge: 0,
@@ -35,6 +35,7 @@ const DeliveryRulesTab: React.FC = () => {
     max_delivery_charge: null,
     charge_above_threshold: null,
     is_active: true,
+    base_distance_km: 5,
   });
 
   const resetForm = () => {
@@ -47,6 +48,7 @@ const DeliveryRulesTab: React.FC = () => {
       max_delivery_charge: null,
       charge_above_threshold: null,
       is_active: true,
+      base_distance_km: 5,
     });
     setEditingId(null);
   };
@@ -64,6 +66,7 @@ const DeliveryRulesTab: React.FC = () => {
       max_delivery_charge: rule.max_delivery_charge,
       charge_above_threshold: rule.charge_above_threshold,
       is_active: rule.is_active,
+      base_distance_km: (rule as any).base_distance_km ?? 5,
     });
     setIsDialogOpen(true);
   };
