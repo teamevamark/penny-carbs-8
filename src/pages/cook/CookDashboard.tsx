@@ -234,8 +234,8 @@ const CookDashboard: React.FC = () => {
                   Kitchen Location
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {(profile as any).latitude && (profile as any).longitude
-                    ? `📍 Location set (${(profile as any).latitude.toFixed(4)}, ${(profile as any).longitude.toFixed(4)})`
+                  {profile.latitude && profile.longitude
+                    ? `📍 Location set (${profile.latitude.toFixed(4)}, ${profile.longitude.toFixed(4)})`
                     : '⚠️ Not set — needed for delivery distance calculation'}
                 </p>
               </div>
@@ -244,13 +244,13 @@ const CookDashboard: React.FC = () => {
                 variant={showLocationPicker ? "secondary" : "outline"}
                 onClick={() => setShowLocationPicker(!showLocationPicker)}
               >
-                {showLocationPicker ? 'Hide Map' : (profile as any).latitude ? 'Update' : 'Set Location'}
+                {showLocationPicker ? 'Hide Map' : profile.latitude ? 'Update' : 'Set Location'}
               </Button>
             </div>
             {showLocationPicker && (
               <GoogleMapPicker
-                latitude={(profile as any).latitude}
-                longitude={(profile as any).longitude}
+                latitude={profile.latitude}
+                longitude={profile.longitude}
                 onLocationChange={async (lat, lng) => {
                   try {
                     await updateLocation.mutateAsync({ latitude: lat, longitude: lng });
