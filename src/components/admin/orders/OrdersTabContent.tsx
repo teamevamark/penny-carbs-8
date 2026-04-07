@@ -47,7 +47,7 @@ interface OrderItemDetail {
 
 interface OrderDetail {
   items: OrderItemDetail[];
-  cook?: { kitchen_name: string; mobile_number: string } | null;
+  cook?: { kitchen_name: string; mobile_number: string; latitude?: number | null; longitude?: number | null } | null;
   delivery_staff?: { name: string; mobile_number: string; vehicle_type: string } | null;
   panchayat?: { name: string } | null;
 }
