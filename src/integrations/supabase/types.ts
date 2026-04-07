@@ -662,6 +662,8 @@ export type Database = {
           is_active: boolean
           is_available: boolean
           kitchen_name: string
+          latitude: number | null
+          longitude: number | null
           mobile_number: string
           panchayat_id: string | null
           password_hash: string | null
@@ -679,6 +681,8 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           kitchen_name: string
+          latitude?: number | null
+          longitude?: number | null
           mobile_number: string
           panchayat_id?: string | null
           password_hash?: string | null
@@ -696,6 +700,8 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           kitchen_name?: string
+          latitude?: number | null
+          longitude?: number | null
           mobile_number?: string
           panchayat_id?: string | null
           password_hash?: string | null
@@ -887,6 +893,7 @@ export type Database = {
       }
       delivery_rules: {
         Row: {
+          base_distance_km: number
           charge_above_threshold: number | null
           created_at: string
           free_delivery_above: number | null
@@ -900,6 +907,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_distance_km?: number
           charge_above_threshold?: number | null
           created_at?: string
           free_delivery_above?: number | null
@@ -913,6 +921,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_distance_km?: number
           charge_above_threshold?: number | null
           created_at?: string
           free_delivery_above?: number | null
@@ -1553,6 +1562,7 @@ export type Database = {
           delivered_at: string | null
           delivery_address: string | null
           delivery_amount: number | null
+          delivery_distance_km: number | null
           delivery_earnings: number | null
           delivery_eta: string | null
           delivery_instructions: string | null
@@ -1597,6 +1607,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address?: string | null
           delivery_amount?: number | null
+          delivery_distance_km?: number | null
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null
@@ -1641,6 +1652,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address?: string | null
           delivery_amount?: number | null
+          delivery_distance_km?: number | null
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null

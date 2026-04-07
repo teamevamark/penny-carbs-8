@@ -5,12 +5,13 @@ import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation } from '@/contexts/LocationContext';
 import { useCustomerAddresses } from '@/hooks/useCustomerAddresses';
+import { useDeliveryChargeCalculator } from '@/hooks/useDeliveryChargeCalculator';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, MapPin, ShoppingBag, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, ShoppingBag, Loader2, Navigation } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AddressSelector from '@/components/customer/AddressSelector';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
@@ -41,6 +42,18 @@ const Checkout: React.FC = () => {
 
   // Determine service type from cart items (assume all items have same service type)
   const serviceType = items[0]?.food_item?.service_type || 'cloud_kitchen';
+
+  // Get the primary cook ID from cart items for distance calculation
+  const primaryCookId = items[0]?.selected_cook_id || null;
+
+  // Calculate delivery charge based on distance
+  const { charge: calculatedDeliveryFee, distanceKm, isLoading: deliveryChargeLoading } = useDeliveryChargeCalculator(
+    serviceType,
+    primaryCookId,
+    deliveryLat,
+    deliveryLng,
+    totalAmount
+  );
 
   if (!user) {
     navigate('/auth');
@@ -130,6 +143,7 @@ const Checkout: React.FC = () => {
           delivery_instructions: deliveryInstructions || null,
           delivery_latitude: deliveryLat,
           delivery_longitude: deliveryLng,
+          delivery_distance_km: distanceKm,
           ...(isHomemade ? {
             status: 'confirmed' as const,
             cook_status: 'pending',
@@ -270,7 +284,7 @@ const Checkout: React.FC = () => {
     }
   };
 
-  const deliveryFee = serviceType === 'homemade' ? 30 : 0;
+  const deliveryFee = calculatedDeliveryFee;
   const grandTotal = totalAmount + deliveryFee;
 
   return (
@@ -353,8 +367,18 @@ const Checkout: React.FC = () => {
               <span>₹{totalAmount.toFixed(0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Delivery Fee</span>
-              {deliveryFee > 0 ? (
+              <div>
+                <span className="text-muted-foreground">Delivery Fee</span>
+                {distanceKm !== null && (
+                  <span className="text-xs text-muted-foreground ml-1 flex items-center gap-1">
+                    <Navigation className="h-3 w-3 inline" />
+                    {distanceKm} km
+                  </span>
+                )}
+              </div>
+              {deliveryChargeLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : deliveryFee > 0 ? (
                 <span>₹{deliveryFee}</span>
               ) : (
                 <span className="text-green-600">FREE</span>

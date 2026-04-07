@@ -26,7 +26,7 @@ const DeliveryRulesTab: React.FC = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [expandedRuleId, setExpandedRuleId] = useState<string | null>(null);
 
-  const [form, setForm] = useState<DeliveryRuleInput>({
+  const [form, setForm] = useState<DeliveryRuleInput & { base_distance_km?: number }>({
     service_type: 'cloud_kitchen',
     rule_name: '',
     min_delivery_charge: 0,
@@ -35,6 +35,7 @@ const DeliveryRulesTab: React.FC = () => {
     max_delivery_charge: null,
     charge_above_threshold: null,
     is_active: true,
+    base_distance_km: 5,
   });
 
   const resetForm = () => {
@@ -47,6 +48,7 @@ const DeliveryRulesTab: React.FC = () => {
       max_delivery_charge: null,
       charge_above_threshold: null,
       is_active: true,
+      base_distance_km: 5,
     });
     setEditingId(null);
   };
@@ -64,6 +66,7 @@ const DeliveryRulesTab: React.FC = () => {
       max_delivery_charge: rule.max_delivery_charge,
       charge_above_threshold: rule.charge_above_threshold,
       is_active: rule.is_active,
+      base_distance_km: (rule as any).base_distance_km ?? 5,
     });
     setIsDialogOpen(true);
   };
@@ -102,9 +105,11 @@ const DeliveryRulesTab: React.FC = () => {
             <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span>Min Charge:</span>
               <span className="font-medium text-foreground">₹{rule.min_delivery_charge}</span>
+              <span>Base Distance:</span>
+              <span className="font-medium text-foreground">{(rule as any).base_distance_km ?? 5} km</span>
               {rule.per_km_charge != null && rule.per_km_charge > 0 && (
                 <>
-                  <span>Per KM:</span>
+                  <span>Per KM (extra):</span>
                   <span className="font-medium text-foreground">₹{rule.per_km_charge}</span>
                 </>
               )}
@@ -222,13 +227,24 @@ const DeliveryRulesTab: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Per KM Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Label>Base Distance (KM)</Label>
+                <Input type="number" min="0" step="0.5" value={form.base_distance_km ?? 5} onChange={(e) => setForm(prev => ({ ...prev, base_distance_km: Number(e.target.value) }))} />
+                <p className="text-xs text-muted-foreground">Minimum charge applies within this distance. Extra KMs charged separately.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Per KM Charge (₹) <span className="text-muted-foreground text-xs">For extra distance</span></Label>
                 <Input type="number" min="0" placeholder="0" value={form.per_km_charge ?? ''} onChange={(e) => setForm(prev => ({ ...prev, per_km_charge: e.target.value ? Number(e.target.value) : null }))} />
               </div>
 
               <div className="space-y-2">
                 <Label>Max Delivery Charge (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
                 <Input type="number" min="0" placeholder="Leave empty for no cap" value={form.max_delivery_charge ?? ''} onChange={(e) => setForm(prev => ({ ...prev, max_delivery_charge: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Free Delivery Above (₹) <span className="text-muted-foreground text-xs">Optional</span></Label>
+                <Input type="number" min="0" placeholder="Leave empty for no free delivery" value={form.free_delivery_above ?? ''} onChange={(e) => setForm(prev => ({ ...prev, free_delivery_above: e.target.value ? Number(e.target.value) : null }))} />
               </div>
 
               <p className="text-xs text-muted-foreground border-t pt-3">

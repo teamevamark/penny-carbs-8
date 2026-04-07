@@ -17,11 +17,13 @@ import {
   BarChart3,
   Settings,
   UtensilsCrossed,
+  Calculator,
 } from 'lucide-react';
 import HomeDeliveryItems from './HomeDeliveryItems';
 import HomeDeliveryDelivery from './HomeDeliveryDelivery';
+import DeliveryRulesTab from '@/components/admin/delivery/DeliveryRulesTab';
 
-type SubPage = 'dashboard' | 'items' | 'delivery';
+type SubPage = 'dashboard' | 'items' | 'delivery' | 'delivery-charges';
 
 const HomeDeliveryModule: React.FC = () => {
   const navigate = useNavigate();
@@ -102,6 +104,33 @@ const HomeDeliveryModule: React.FC = () => {
     );
   }
 
+  if (currentPage === 'delivery-charges') {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-50 border-b bg-homemade text-white">
+          <div className="flex h-14 items-center px-4">
+            <Home className="h-6 w-6 mr-2" />
+            <h1 className="font-display text-lg font-semibold">Home Food Delivery</h1>
+          </div>
+        </header>
+        <main className="p-4 pb-20">
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="icon" onClick={() => setCurrentPage('dashboard')}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h2 className="text-xl font-bold">Delivery Charge Rules</h2>
+                <p className="text-sm text-muted-foreground">Distance-based delivery charge management</p>
+              </div>
+            </div>
+            <DeliveryRulesTab />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const menuItems = [
     {
       icon: UtensilsCrossed,
@@ -122,6 +151,12 @@ const HomeDeliveryModule: React.FC = () => {
       label: 'Cook Assignment', 
       action: () => navigate('/admin/home-delivery/cooks'),
       description: 'Assign cooks to orders'
+    },
+    {
+      icon: Calculator,
+      label: 'Delivery Charges',
+      action: () => setCurrentPage('delivery-charges'),
+      description: 'Distance-based charge rules & per-km pricing',
     },
     { 
       icon: Truck, 

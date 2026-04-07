@@ -21,6 +21,7 @@ export interface DeliveryRule {
   per_km_charge: number | null;
   max_delivery_charge: number | null;
   charge_above_threshold: number | null;
+  base_distance_km: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -35,6 +36,7 @@ export interface DeliveryRuleInput {
   per_km_charge?: number | null;
   max_delivery_charge?: number | null;
   charge_above_threshold?: number | null;
+  base_distance_km?: number;
   is_active?: boolean;
 }
 
