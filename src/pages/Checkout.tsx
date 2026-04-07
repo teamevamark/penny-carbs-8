@@ -143,6 +143,8 @@ const Checkout: React.FC = () => {
           delivery_instructions: deliveryInstructions || null,
           delivery_latitude: deliveryLat,
           delivery_longitude: deliveryLng,
+          delivery_distance_km: distanceKm,
+          delivery_longitude: deliveryLng,
           ...(isHomemade ? {
             status: 'confirmed' as const,
             cook_status: 'pending',
@@ -366,8 +368,18 @@ const Checkout: React.FC = () => {
               <span>₹{totalAmount.toFixed(0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Delivery Fee</span>
-              {deliveryFee > 0 ? (
+              <div>
+                <span className="text-muted-foreground">Delivery Fee</span>
+                {distanceKm !== null && (
+                  <span className="text-xs text-muted-foreground ml-1 flex items-center gap-1">
+                    <Navigation className="h-3 w-3 inline" />
+                    {distanceKm} km
+                  </span>
+                )}
+              </div>
+              {deliveryChargeLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : deliveryFee > 0 ? (
                 <span>₹{deliveryFee}</span>
               ) : (
                 <span className="text-green-600">FREE</span>
