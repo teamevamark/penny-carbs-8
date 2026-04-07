@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle, ChevronDown, MapPin, User, UtensilsCrossed, Phone, MessageCircle, Navigation, Calculator, Save, Loader2 } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Truck, Search, AlertTriangle, ChevronDown, MapPin, User, UtensilsCrossed, Phone, MessageCircle, Navigation, Calculator, Save, Loader2, Timer, AlertCircle } from 'lucide-react';
 import GoogleMapViewer from '@/components/google-maps/GoogleMapViewer';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistanceKm } from '@/lib/distanceUtils';
