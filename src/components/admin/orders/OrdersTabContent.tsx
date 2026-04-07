@@ -491,6 +491,59 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                               </div>
                             </div>
 
+                            {/* Distance Calculator */}
+                            <div className="rounded-md border p-3 space-y-2">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                <Navigation className="h-4 w-4 text-muted-foreground" />
+                                Delivery Distance
+                                {order.delivery_distance_km != null && (
+                                  <Badge variant="outline" className="ml-auto text-xs">
+                                    Saved: {order.delivery_distance_km} km
+                                  </Badge>
+                                )}
+                              </h4>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  placeholder="Distance (km)"
+                                  value={editingDistance[order.id] ?? (order.delivery_distance_km != null ? String(order.delivery_distance_km) : '')}
+                                  onChange={(e) => setEditingDistance(prev => ({ ...prev, [order.id]: e.target.value }))}
+                                  className="w-32 h-8 text-sm"
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-8 gap-1"
+                                  onClick={() => handleCalculateDistance(order)}
+                                  title="Auto-calculate from cook & customer GPS"
+                                >
+                                  <Calculator className="h-3.5 w-3.5" />
+                                  Calculate
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="h-8 gap-1"
+                                  disabled={savingDistance[order.id]}
+                                  onClick={() => handleSaveDistance(order.id)}
+                                >
+                                  {savingDistance[order.id] ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Save className="h-3.5 w-3.5" />
+                                  )}
+                                  Save
+                                </Button>
+                              </div>
+                              {!details?.cook?.latitude && (
+                                <p className="text-xs text-muted-foreground">⚠️ Cook location not set — enter distance manually</p>
+                              )}
+                              {!(order as any).delivery_latitude && (
+                                <p className="text-xs text-muted-foreground">⚠️ Customer delivery coordinates not available</p>
+                              )}
+                            </div>
+
                             {/* Location & Delivery Info */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div className="space-y-2">
