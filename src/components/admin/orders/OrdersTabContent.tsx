@@ -496,9 +496,9 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                               <h4 className="text-sm font-semibold flex items-center gap-1.5">
                                 <Navigation className="h-4 w-4 text-muted-foreground" />
                                 Delivery Distance
-                                {order.delivery_distance_km != null && (
+                                {(order as any).delivery_distance_km != null && (
                                   <Badge variant="outline" className="ml-auto text-xs">
-                                    Saved: {order.delivery_distance_km} km
+                                    Saved: {(order as any).delivery_distance_km} km
                                   </Badge>
                                 )}
                               </h4>
@@ -508,7 +508,7 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                                   step="0.1"
                                   min="0"
                                   placeholder="Distance (km)"
-                                  value={editingDistance[order.id] ?? (order.delivery_distance_km != null ? String(order.delivery_distance_km) : '')}
+                                  value={editingDistance[order.id] ?? ((order as any).delivery_distance_km != null ? String((order as any).delivery_distance_km) : '')}
                                   onChange={(e) => setEditingDistance(prev => ({ ...prev, [order.id]: e.target.value }))}
                                   className="w-32 h-8 text-sm"
                                 />
