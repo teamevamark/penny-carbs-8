@@ -516,7 +516,97 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
                               </div>
                             </div>
 
-                            {/* Distance Calculator */}
+                            {/* Time Punch & Delay Tracker */}
+                            <div className="rounded-md border p-3 space-y-2">
+                              <h4 className="text-sm font-semibold flex items-center gap-1.5">
+                                <Timer className="h-4 w-4 text-muted-foreground" />
+                                Time Punch & Delays
+                              </h4>
+                              {(() => {
+                                const o = order as any;
+                                const orderPlaced = order.created_at;
+                                const cookAssigned = o.cook_assigned_at;
+                                const cookResponded = o.cook_responded_at;
+                                const deliveredAt = o.delivered_at;
+                                const updatedAt = order.updated_at;
+
+                                // Calculate durations
+                                const waitForCookAssign = getMinutesDiff(orderPlaced, cookAssigned);
+                                const cookResponseTime = getMinutesDiff(cookAssigned, cookResponded);
+                                const totalTime = deliveredAt ? getMinutesDiff(orderPlaced, deliveredAt) : null;
+                                const pendingMinutes = order.status === 'pending' ? getMinutesDiff(orderPlaced, new Date().toISOString()) : null;
+
+                                const timelineSteps = [
+                                  { label: 'Order Placed', time: formatTimestamp(orderPlaced), raw: orderPlaced },
+                                  { label: 'Cook Assigned', time: formatTimestamp(cookAssigned), raw: cookAssigned, duration: waitForCookAssign, durationLabel: 'Wait for assignment', threshold: 30 },
+                                  { label: 'Cook Responded', time: formatTimestamp(cookResponded), raw: cookResponded, duration: cookResponseTime, durationLabel: 'Response time', threshold: 15 },
+                                  ...(deliveredAt ? [{ label: 'Delivered', time: formatTimestamp(deliveredAt), raw: deliveredAt, duration: totalTime, durationLabel: 'Total time', threshold: 120 }] : []),
+                                ];
+
+                                return (
+                                  <div className="space-y-1.5">
+                                    {/* Active delay warning */}
+                                    {pendingMinutes !== null && pendingMinutes > 15 && (
+                                      <div className="flex items-center gap-1.5 rounded-md bg-destructive/10 px-2 py-1.5 text-xs text-destructive font-medium">
+                                        <AlertCircle className="h-3.5 w-3.5" />
+                                        Order pending for {formatDuration(pendingMinutes)} — needs attention!
+                                      </div>
+                                    )}
+                                    {order.status !== 'cancelled' && order.status !== 'delivered' && order.status !== 'pending' && (() => {
+                                      const activeMinutes = getMinutesDiff(orderPlaced, new Date().toISOString());
+                                      if (activeMinutes !== null && activeMinutes > 60) {
+                                        return (
+                                          <div className="flex items-center gap-1.5 rounded-md bg-warning/20 px-2 py-1.5 text-xs text-warning-foreground font-medium">
+                                            <AlertCircle className="h-3.5 w-3.5" />
+                                            Order active for {formatDuration(activeMinutes)} (Status: {order.status})
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+
+                                    {/* Timeline */}
+                                    <div className="relative pl-4 space-y-2">
+                                      {timelineSteps.map((step, idx) => (
+                                        <div key={idx} className="relative">
+                                          {/* Connector line */}
+                                          {idx < timelineSteps.length - 1 && (
+                                            <div className="absolute left-[-12px] top-4 w-px h-full bg-border" />
+                                          )}
+                                          {/* Dot */}
+                                          <div className={`absolute left-[-16px] top-1 w-2 h-2 rounded-full ${step.raw ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
+                                          <div className="flex flex-wrap items-center gap-x-2 text-xs">
+                                            <span className="font-medium">{step.label}</span>
+                                            {step.time ? (
+                                              <span className="text-muted-foreground">{step.time}</span>
+                                            ) : (
+                                              <span className="text-muted-foreground italic">—</span>
+                                            )}
+                                            {step.duration !== undefined && step.duration !== null && (
+                                              <Badge
+                                                variant="outline"
+                                                className={`text-[10px] px-1.5 py-0 ${isDelayed(step.duration, step.threshold || 30) ? 'border-destructive text-destructive' : 'border-border text-muted-foreground'}`}
+                                              >
+                                                {isDelayed(step.duration, step.threshold || 30) && '⚠ '}
+                                                {step.durationLabel}: {formatDuration(step.duration)}
+                                              </Badge>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {/* Summary */}
+                                    {totalTime !== null && (
+                                      <div className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium ${isDelayed(totalTime, 120) ? 'bg-destructive/10 text-destructive' : 'bg-success/10 text-success-foreground'}`}>
+                                        <Clock className="h-3.5 w-3.5" />
+                                        Total Order Time: {formatDuration(totalTime)}
+                                        {isDelayed(totalTime, 120) && ' — Delayed'}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
                             <div className="rounded-md border p-3 space-y-2">
                               <h4 className="text-sm font-semibold flex items-center gap-1.5">
                                 <Navigation className="h-4 w-4 text-muted-foreground" />
