@@ -190,13 +190,25 @@ const OrdersTabContent: React.FC<OrdersTabContentProps> = ({ serviceType }) => {
         })
       );
 
-      // Fetch assigned cook
+      // Fetch assigned cook - try order.assigned_cook_id first, fallback to order_assigned_cooks table
       let cook = null;
-      if (order.assigned_cook_id) {
+      let cookId = order.assigned_cook_id;
+      if (!cookId) {
+        // Fallback: look up from order_assigned_cooks table
+        const { data: assignment } = await supabase
+          .from('order_assigned_cooks')
+          .select('cook_id')
+          .eq('order_id', order.id)
+          .in('cook_status', ['accepted', 'preparing', 'cooked', 'ready'])
+          .limit(1)
+          .maybeSingle();
+        cookId = assignment?.cook_id || null;
+      }
+      if (cookId) {
         const { data: cookData } = await supabase
           .from('cooks')
           .select('kitchen_name, mobile_number, latitude, longitude')
-          .eq('id', order.assigned_cook_id)
+          .eq('id', cookId)
           .single();
         cook = cookData;
       }
