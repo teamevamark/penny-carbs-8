@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
   Download, 
@@ -16,12 +17,16 @@ import {
   Calendar as CalendarIcon,
   Settings,
   TrendingUp,
-  Building2
+  Building2,
+  MapPin,
+  Ruler,
+  IndianRupee
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useSalesReport, useCookPerformanceReport, useDeliverySettlementReport, useReferralReport, usePanchayats, useVehicleRentReport } from '@/hooks/useReports';
 import { useProfitLossReport } from '@/hooks/useProfitLoss';
+import { useDeliveryDistanceReport } from '@/hooks/useDeliveryDistanceReport';
 import { exportToCSV, exportToExcel } from '@/lib/exportUtils';
 import { ReportFilters } from '@/types/reports';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -46,6 +51,7 @@ const AdminReports: React.FC = () => {
   const { data: referralData, isLoading: referralLoading } = useReferralReport();
   const { data: profitLossData, isLoading: profitLossLoading } = useProfitLossReport(filters);
   const { data: vehicleRentData, isLoading: vehicleRentLoading } = useVehicleRentReport(filters);
+  const { data: distanceReportData, isLoading: distanceLoading } = useDeliveryDistanceReport(filters);
 
   // Process sales data for display
   const salesSummary = useMemo(() => {
@@ -440,6 +446,216 @@ const AdminReports: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="delivery" className="space-y-4">
+            {/* Active Delivery Rules - Rate/KM Configuration */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ruler className="h-5 w-5" />
+                  Delivery Rate / Kilometer Rules
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {distanceLoading ? (
+                  <p className="text-center text-muted-foreground">Loading...</p>
+                ) : distanceReportData?.rules && distanceReportData.rules.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {distanceReportData.rules.map((rule: any) => (
+                      <Card key={rule.id} className={cn("border", rule.is_active ? "border-primary/30 bg-primary/5" : "opacity-60")}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-semibold text-sm">{rule.rule_name}</p>
+                            <Badge variant={rule.is_active ? "default" : "secondary"} className="text-[10px]">
+                              {rule.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground capitalize mb-3">{rule.service_type.replace('_', ' ')}</p>
+                          <div className="space-y-1.5 text-xs">
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Base Distance</span>
+                              <span className="font-medium">{rule.base_distance_km} km</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Min Charge (within base)</span>
+                              <span className="font-medium text-primary">₹{rule.min_delivery_charge}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Per KM (above base)</span>
+                              <span className="font-medium text-destructive">₹{rule.per_km_charge || 0}/km</span>
+                            </div>
+                            {rule.max_delivery_charge && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Max Charge Cap</span>
+                                <span className="font-medium">₹{rule.max_delivery_charge}</span>
+                              </div>
+                            )}
+                            {rule.free_delivery_above && (
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Free Delivery Above</span>
+                                <span className="font-medium text-success">₹{rule.free_delivery_above}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Example calculation */}
+                          <div className="mt-3 p-2 rounded bg-muted text-[11px]">
+                            <p className="font-medium mb-1">Calculation Example:</p>
+                            <p>• 0–{rule.base_distance_km} km = ₹{rule.min_delivery_charge}</p>
+                            {(rule.per_km_charge || 0) > 0 && (
+                              <p>• {rule.base_distance_km}+ km = ₹{rule.min_delivery_charge} + (extra km × ₹{rule.per_km_charge})</p>
+                            )}
+                            {(rule.per_km_charge || 0) > 0 && (
+                              <p className="text-muted-foreground mt-1">
+                                e.g. {rule.base_distance_km + 5} km = ₹{rule.min_delivery_charge} + (5 × ₹{rule.per_km_charge}) = ₹{rule.min_delivery_charge + 5 * (rule.per_km_charge || 0)}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground">No delivery rules configured</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Distance Range Breakdown */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Orders by Distance Range
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {distanceLoading ? (
+                  <p className="text-center text-muted-foreground">Loading...</p>
+                ) : distanceReportData?.distanceBreakdown && distanceReportData.distanceBreakdown.some(d => d.count > 0) ? (
+                  <>
+                    <div className="mb-4 h-48">
+                      <ChartContainer config={{ count: { label: 'Orders', color: 'hsl(var(--primary))' } }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={distanceReportData.distanceBreakdown}>
+                            <XAxis dataKey="range" fontSize={11} />
+                            <YAxis fontSize={11} />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Distance Range</TableHead>
+                          <TableHead className="text-right">Orders</TableHead>
+                          <TableHead className="text-right">Avg Distance</TableHead>
+                          <TableHead className="text-right">Total Delivery Charge</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {distanceReportData.distanceBreakdown.map((row) => (
+                          <TableRow key={row.range}>
+                            <TableCell className="font-medium">{row.range}</TableCell>
+                            <TableCell className="text-right">{row.count}</TableCell>
+                            <TableCell className="text-right">{row.avg_distance} km</TableCell>
+                            <TableCell className="text-right text-primary">₹{row.total_delivery_charge.toLocaleString()}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : (
+                  <p className="text-center text-muted-foreground">No distance data available</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Order-wise Distance Calculation */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Order Delivery Distance Details
+                </CardTitle>
+                <Button size="sm" variant="outline" onClick={() => {
+                  if (!distanceReportData?.orders) return;
+                  const exportData = distanceReportData.orders.map(o => ({
+                    order_number: o.order_number,
+                    service_type: o.service_type,
+                    cook_name: o.cook_name,
+                    distance_km: o.calculated_distance_km ?? 'N/A',
+                    delivery_charged: o.delivery_amount ?? 0,
+                    calculated_charge: o.calculated_charge ?? 'N/A',
+                    order_amount: o.total_amount,
+                    panchayat: o.panchayat_name,
+                    status: o.status,
+                    date: format(new Date(o.created_at), 'dd/MM/yyyy'),
+                  }));
+                  exportToCSV(exportData, 'delivery-distance-report');
+                }}>
+                  <Download className="mr-2 h-4 w-4" />CSV
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {distanceLoading ? (
+                  <p className="text-center text-muted-foreground">Loading...</p>
+                ) : distanceReportData?.orders && distanceReportData.orders.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Order #</TableHead>
+                          <TableHead>Cook</TableHead>
+                          <TableHead className="text-right">Distance</TableHead>
+                          <TableHead className="text-right">Charged</TableHead>
+                          <TableHead className="text-right">Calc. Charge</TableHead>
+                          <TableHead className="text-right">Order Amt</TableHead>
+                          <TableHead>Panchayat</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {distanceReportData.orders.slice(0, 50).map((o) => {
+                          const hasMismatch = o.calculated_charge !== null && o.delivery_amount !== null && Math.abs(o.calculated_charge - (o.delivery_amount || 0)) > 5;
+                          return (
+                            <TableRow key={o.order_id}>
+                              <TableCell className="font-mono text-xs">{o.order_number}</TableCell>
+                              <TableCell className="text-sm max-w-[120px] truncate">{o.cook_name}</TableCell>
+                              <TableCell className="text-right">
+                                {o.calculated_distance_km !== null ? (
+                                  <span className="font-medium">{o.calculated_distance_km} km</span>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">No location</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">₹{o.delivery_amount ?? 0}</TableCell>
+                              <TableCell className={cn("text-right font-medium", hasMismatch && "text-destructive")}>
+                                {o.calculated_charge !== null ? `₹${o.calculated_charge}` : '-'}
+                              </TableCell>
+                              <TableCell className="text-right">₹{o.total_amount.toLocaleString()}</TableCell>
+                              <TableCell className="text-xs">{o.panchayat_name}</TableCell>
+                              <TableCell>
+                                <Badge variant={o.status === 'delivered' ? 'default' : 'secondary'} className="text-[10px]">
+                                  {o.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                    {distanceReportData.orders.length > 50 && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Showing 50 of {distanceReportData.orders.length} orders. Export CSV for full data.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-center text-muted-foreground">No delivery orders found</p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Indoor Event Vehicle Rents */}
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
