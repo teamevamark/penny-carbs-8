@@ -57,10 +57,15 @@ const ItemDetail: React.FC = () => {
   const [showPendingCartDialog, setShowPendingCartDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<'add' | 'buy' | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const { selectedPanchayat } = useLocation();
+  const { selectedPanchayat, isLocationSet } = useLocation();
 
-  // Don't auto-show login dialog - let users browse freely
-  // Login will be prompted when they try to add to cart or buy
+  // Auto-show login dialog for non-logged-in users (e.g. visitors via shared link)
+  // Cook availability depends on the user's panchayat, which requires login
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setShowLoginDialog(true);
+    }
+  }, [authLoading, user]);
 
   const cartItem = cartItems.find(ci => ci.food_item_id === itemId);
   const currentCartQuantity = cartItem?.quantity || 0;
