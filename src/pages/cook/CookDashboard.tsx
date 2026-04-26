@@ -668,6 +668,12 @@ const CookDashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AllocateDeliveryDialog
+        open={!!allocateOrder}
+        onOpenChange={(open) => !open && setAllocateOrder(null)}
+        order={allocateOrder}
+      />
     </div>
   );
 };
