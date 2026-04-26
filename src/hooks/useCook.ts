@@ -397,3 +397,72 @@ export function useUpdateCookLocation() {
     },
   });
 }
+
+export interface AvailableDeliveryStaff {
+  id: string;
+  user_id: string | null;
+  name: string;
+  mobile_number: string;
+  vehicle_type: string;
+  vehicle_number: string | null;
+  is_available: boolean;
+  staff_type: string;
+  assigned_wards: number[] | null;
+  rating: number | null;
+  total_deliveries: number | null;
+}
+
+export function useAvailableDeliveryStaff(panchayatId?: string | null, wardNumber?: number | null) {
+  return useQuery({
+    queryKey: ['available-delivery-staff', panchayatId, wardNumber],
+    queryFn: async (): Promise<AvailableDeliveryStaff[]> => {
+      if (!panchayatId) return [];
+
+      const { data, error } = await supabase
+        .from('delivery_staff')
+        .select('id, user_id, name, mobile_number, vehicle_type, vehicle_number, is_available, staff_type, assigned_wards, assigned_panchayat_ids, panchayat_id, rating, total_deliveries')
+        .eq('is_active', true)
+        .eq('is_approved', true);
+
+      if (error) throw error;
+
+      const filtered = (data || []).filter((s: any) => {
+        const inPanchayat =
+          s.panchayat_id === panchayatId ||
+          (Array.isArray(s.assigned_panchayat_ids) && s.assigned_panchayat_ids.includes(panchayatId));
+        if (!inPanchayat) return false;
+
+        if (s.staff_type === 'registered_partner' && Array.isArray(s.assigned_wards) && s.assigned_wards.length > 0 && wardNumber != null) {
+          return s.assigned_wards.includes(wardNumber);
+        }
+        return true;
+      });
+
+      return filtered as AvailableDeliveryStaff[];
+    },
+    enabled: !!panchayatId,
+  });
+}
+
+export function useAssignDeliveryStaff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, deliveryUserId }: { orderId: string; deliveryUserId: string }) => {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          assigned_delivery_id: deliveryUserId,
+          delivery_status: 'assigned',
+          delivery_eta: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cook-orders'] });
+    },
+  });
+}
+
