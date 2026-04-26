@@ -44,6 +44,9 @@ import ComboRequestForm from '@/components/cook/ComboRequestForm';
 import NewCookOrderAlert from '@/components/cook/NewCookOrderAlert';
 import NotificationPermissionBanner from '@/components/NotificationPermissionBanner';
 import GoogleMapPicker from '@/components/google-maps/GoogleMapPicker';
+import AllocateDeliveryDialog from '@/components/cook/AllocateDeliveryDialog';
+import { Bike } from 'lucide-react';
+import type { CookOrder } from '@/types/cook';
 
 const statusConfig: Record<CookStatus, { label: string; color: string; icon: React.ReactNode }> = {
   pending: { label: 'New Order', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="h-4 w-4" /> },
@@ -68,6 +71,7 @@ const CookDashboard: React.FC = () => {
   const { pendingOrders: notificationOrders, showAlert, dismissAlert, removeOrder, ORDER_ACCEPT_CUTOFF_SECONDS } = useCookNotifications();
   const [activeTab, setActiveTab] = useState('active');
   const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [allocateOrder, setAllocateOrder] = useState<CookOrder | null>(null);
 
   // Calculate dish summary from order history
   const dishSummary = useMemo(() => {
@@ -385,6 +389,15 @@ const CookDashboard: React.FC = () => {
                             <span>{order.guest_count} guests</span>
                           </div>
                         )}
+                        {order.panchayat?.name && (
+                          <div className="flex items-center gap-1 text-muted-foreground col-span-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {order.panchayat.name}
+                              {order.ward_number ? ` • Ward ${order.ward_number}` : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Order Items - Dishes assigned to this cook */}
@@ -459,11 +472,21 @@ const CookDashboard: React.FC = () => {
                               Complete
                             </Button>
                           )}
-                          {order.cook_status === 'cooked' && (
-                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Cooked - Waiting for Pickup
-                            </Badge>
+                          {(order.cook_status === 'cooked' || order.cook_status === 'ready') && (
+                            order.assigned_delivery_id ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700">
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Delivery: {order.assigned_delivery?.name || 'Assigned'}
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => setAllocateOrder(order)}
+                              >
+                                <Bike className="h-4 w-4 mr-1" />
+                                Allocate Delivery
+                              </Button>
+                            )
                           )}
                         </div>
                       </div>
@@ -645,6 +668,12 @@ const CookDashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      <AllocateDeliveryDialog
+        open={!!allocateOrder}
+        onOpenChange={(open) => !open && setAllocateOrder(null)}
+        order={allocateOrder}
+      />
     </div>
   );
 };
