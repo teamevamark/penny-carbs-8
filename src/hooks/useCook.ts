@@ -87,7 +87,11 @@ export function useCookOrders() {
           delivery_address,
           guest_count,
           created_at,
-          customer_id
+          customer_id,
+          panchayat_id,
+          ward_number,
+          assigned_delivery_id,
+          delivery_status
         `)
         .in('id', orderIds)
         .order('created_at', { ascending: false });
