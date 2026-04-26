@@ -389,6 +389,15 @@ const CookDashboard: React.FC = () => {
                             <span>{order.guest_count} guests</span>
                           </div>
                         )}
+                        {order.panchayat?.name && (
+                          <div className="flex items-center gap-1 text-muted-foreground col-span-2">
+                            <MapPin className="h-3 w-3" />
+                            <span>
+                              {order.panchayat.name}
+                              {order.ward_number ? ` • Ward ${order.ward_number}` : ''}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Order Items - Dishes assigned to this cook */}
