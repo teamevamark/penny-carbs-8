@@ -519,7 +519,12 @@ const ItemDetail: React.FC = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 border-t bg-card p-4 shadow-lg">
-        {noCooksAvailable ? (
+        {needsLoginForCooks ? (
+          <Button className="h-12 w-full text-base" onClick={() => setShowLoginDialog(true)}>
+            <Lock className="mr-2 h-5 w-5" />
+            {user ? 'Set Location to Order' : 'Login to Order'}
+          </Button>
+        ) : noCooksAvailable ? (
           <Button className="h-12 w-full text-base" disabled>
             <Lock className="mr-2 h-5 w-5" />
             No Cooks Available
