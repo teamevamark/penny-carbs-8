@@ -170,7 +170,9 @@ const ItemDetail: React.FC = () => {
 
   // Multi-cook: require selection (homemade only for cook selector UI)
   const needsCookSelection = isHomemade && availableCooks.length > 1 && !selectedCookId;
-  const noCooksAvailable = (isHomemade || isCloudKitchen) && availableCooks.length === 0 && !isLoading;
+  // Only consider "no cooks" if user is logged in with a location set; otherwise we need login first
+  const noCooksAvailable = (isHomemade || isCloudKitchen) && availableCooks.length === 0 && !isLoading && !!user && isLocationSet;
+  const needsLoginForCooks = (isHomemade || isCloudKitchen) && (!user || !isLocationSet);
 
   const customerPrice = useMemo(() => {
     if (!item) return 0;
