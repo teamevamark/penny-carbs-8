@@ -57,10 +57,15 @@ const ItemDetail: React.FC = () => {
   const [showPendingCartDialog, setShowPendingCartDialog] = useState(false);
   const [pendingAction, setPendingAction] = useState<'add' | 'buy' | null>(null);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const { selectedPanchayat } = useLocation();
+  const { selectedPanchayat, isLocationSet } = useLocation();
 
-  // Don't auto-show login dialog - let users browse freely
-  // Login will be prompted when they try to add to cart or buy
+  // Auto-show login dialog for non-logged-in users (e.g. visitors via shared link)
+  // Cook availability depends on the user's panchayat, which requires login
+  useEffect(() => {
+    if (!authLoading && !user) {
+      setShowLoginDialog(true);
+    }
+  }, [authLoading, user]);
 
   const cartItem = cartItems.find(ci => ci.food_item_id === itemId);
   const currentCartQuantity = cartItem?.quantity || 0;
@@ -165,7 +170,9 @@ const ItemDetail: React.FC = () => {
 
   // Multi-cook: require selection (homemade only for cook selector UI)
   const needsCookSelection = isHomemade && availableCooks.length > 1 && !selectedCookId;
-  const noCooksAvailable = (isHomemade || isCloudKitchen) && availableCooks.length === 0 && !isLoading;
+  // Only consider "no cooks" if user is logged in with a location set; otherwise we need login first
+  const noCooksAvailable = (isHomemade || isCloudKitchen) && availableCooks.length === 0 && !isLoading && !!user && isLocationSet;
+  const needsLoginForCooks = (isHomemade || isCloudKitchen) && (!user || !isLocationSet);
 
   const customerPrice = useMemo(() => {
     if (!item) return 0;
@@ -512,7 +519,12 @@ const ItemDetail: React.FC = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 border-t bg-card p-4 shadow-lg">
-        {noCooksAvailable ? (
+        {needsLoginForCooks ? (
+          <Button className="h-12 w-full text-base" onClick={() => setShowLoginDialog(true)}>
+            <Lock className="mr-2 h-5 w-5" />
+            {user ? 'Set Location to Order' : 'Login to Order'}
+          </Button>
+        ) : noCooksAvailable ? (
           <Button className="h-12 w-full text-base" disabled>
             <Lock className="mr-2 h-5 w-5" />
             No Cooks Available
