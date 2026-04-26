@@ -49,6 +49,18 @@ export interface CookOrder {
   delivery_address: string | null;
   guest_count: number | null;
   created_at: string;
+  panchayat_id?: string | null;
+  ward_number?: number | null;
+  assigned_delivery_id?: string | null;
+  delivery_status?: string | null;
+  assigned_delivery?: {
+    id: string;
+    name: string;
+    mobile_number: string;
+    vehicle_type: string;
+    vehicle_number: string | null;
+  } | null;
+  panchayat?: { id: string; name: string } | null;
   customer?: {
     name: string;
     mobile_number: string;
