@@ -131,12 +131,34 @@ export function useCookOrders() {
           .select('name, mobile_number')
           .eq('user_id', order.customer_id)
           .maybeSingle();
-        
+
+        let panchayat: { id: string; name: string } | null = null;
+        if (order.panchayat_id) {
+          const { data: p } = await supabase
+            .from('panchayats')
+            .select('id, name')
+            .eq('id', order.panchayat_id)
+            .maybeSingle();
+          panchayat = p;
+        }
+
+        let assigned_delivery: CookOrder['assigned_delivery'] = null;
+        if (order.assigned_delivery_id) {
+          const { data: ds } = await supabase
+            .from('delivery_staff')
+            .select('id, name, mobile_number, vehicle_type, vehicle_number')
+            .eq('user_id', order.assigned_delivery_id)
+            .maybeSingle();
+          assigned_delivery = ds;
+        }
+
         return {
           ...order,
           cook_status: assignmentMap.get(order.id) || 'pending',
           customer: customerProfile || undefined,
           order_items: orderItemsMap.get(order.id) || [],
+          panchayat,
+          assigned_delivery,
         };
       }));
       
