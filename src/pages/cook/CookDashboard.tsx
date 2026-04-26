@@ -463,11 +463,21 @@ const CookDashboard: React.FC = () => {
                               Complete
                             </Button>
                           )}
-                          {order.cook_status === 'cooked' && (
-                            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Cooked - Waiting for Pickup
-                            </Badge>
+                          {(order.cook_status === 'cooked' || order.cook_status === 'ready') && (
+                            order.assigned_delivery_id ? (
+                              <Badge variant="outline" className="bg-green-50 text-green-700">
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                Delivery: {order.assigned_delivery?.name || 'Assigned'}
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() => setAllocateOrder(order)}
+                              >
+                                <Bike className="h-4 w-4 mr-1" />
+                                Allocate Delivery
+                              </Button>
+                            )
                           )}
                         </div>
                       </div>
