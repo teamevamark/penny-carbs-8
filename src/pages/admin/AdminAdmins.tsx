@@ -84,6 +84,10 @@ const AdminAdmins: React.FC = () => {
     perm_delivery_staff: 'none',
     perm_reports: 'none',
     perm_settlements: 'none',
+    perm_banners: 'none',
+    perm_categories: 'none',
+    perm_locations: 'none',
+    perm_special_offers: 'none',
   });
 
   const isSuperAdmin = role === 'super_admin';
@@ -198,6 +202,10 @@ const AdminAdmins: React.FC = () => {
         perm_delivery_staff: admin.perm_delivery_staff,
         perm_reports: admin.perm_reports,
         perm_settlements: admin.perm_settlements,
+        perm_banners: admin.perm_banners,
+        perm_categories: admin.perm_categories,
+        perm_locations: admin.perm_locations,
+        perm_special_offers: admin.perm_special_offers,
       });
     } else {
       setEditingAdmin(null);
@@ -213,6 +221,10 @@ const AdminAdmins: React.FC = () => {
         perm_delivery_staff: 'none',
         perm_reports: 'none',
         perm_settlements: 'none',
+        perm_banners: 'none',
+        perm_categories: 'none',
+        perm_locations: 'none',
+        perm_special_offers: 'none',
       });
     }
     setIsDialogOpen(true);
@@ -238,6 +250,10 @@ const AdminAdmins: React.FC = () => {
         perm_delivery_staff: formData.perm_delivery_staff,
         perm_reports: formData.perm_reports,
         perm_settlements: formData.perm_settlements,
+        perm_banners: formData.perm_banners,
+        perm_categories: formData.perm_categories,
+        perm_locations: formData.perm_locations,
+        perm_special_offers: formData.perm_special_offers,
       };
 
       if (editingAdmin) {
@@ -324,6 +340,10 @@ const AdminAdmins: React.FC = () => {
     { key: 'perm_delivery_staff', label: 'Register Delivery Staff' },
     { key: 'perm_reports', label: 'Access Reports' },
     { key: 'perm_settlements', label: 'Approve Settlements' },
+    { key: 'perm_banners', label: 'Manage Banners' },
+    { key: 'perm_categories', label: 'Manage Categories' },
+    { key: 'perm_locations', label: 'Manage Locations' },
+    { key: 'perm_special_offers', label: 'Manage Special Offers' },
   ];
 
   if (!isSuperAdmin) {
