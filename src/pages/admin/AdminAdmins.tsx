@@ -290,7 +290,7 @@ const AdminAdmins: React.FC = () => {
         // Upsert permissions row (admin_permissions has unique user_id)
         const { error } = await supabase
           .from('admin_permissions')
-          .upsert(permissionData, { onConflict: 'user_id' });
+          .upsert(permissionData as any, { onConflict: 'user_id' });
 
         if (error) throw error;
         toast({ title: 'Admin added successfully' });
