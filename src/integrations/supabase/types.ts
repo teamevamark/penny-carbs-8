@@ -29,6 +29,8 @@ export type Database = {
           perm_reports: string
           perm_settlements: string
           perm_special_offers: string
+          perm_storage: string
+          perm_users: string
           updated_at: string
           user_id: string
         }
@@ -46,6 +48,8 @@ export type Database = {
           perm_reports?: string
           perm_settlements?: string
           perm_special_offers?: string
+          perm_storage?: string
+          perm_users?: string
           updated_at?: string
           user_id: string
         }
@@ -63,6 +67,8 @@ export type Database = {
           perm_reports?: string
           perm_settlements?: string
           perm_special_offers?: string
+          perm_storage?: string
+          perm_users?: string
           updated_at?: string
           user_id?: string
         }
