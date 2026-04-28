@@ -44,7 +44,7 @@ const GoogleMapViewer: React.FC<GoogleMapViewerProps> = ({
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || isKeyLoading) {
     return (
       <div className="flex items-center justify-center rounded-lg border bg-muted" style={{ height }}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
