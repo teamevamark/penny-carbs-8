@@ -490,6 +490,63 @@ const AdminLocations: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Google Maps API Key Dialog */}
+      <Dialog open={isKeyDialogOpen} onOpenChange={setIsKeyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingKey ? 'Edit API Key' : 'Add Google Maps API Key'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="key-label">Label *</Label>
+              <Input
+                id="key-label"
+                value={keyFormData.label}
+                onChange={(e) => setKeyFormData({ ...keyFormData, label: e.target.value })}
+                placeholder="e.g., Project A — billing enabled"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="key-value">
+                API Key {editingKey ? '(leave blank to keep current)' : '*'}
+              </Label>
+              <div className="relative">
+                <Input
+                  id="key-value"
+                  type={showKeyValue ? 'text' : 'password'}
+                  value={keyFormData.api_key}
+                  onChange={(e) => setKeyFormData({ ...keyFormData, api_key: e.target.value })}
+                  placeholder="AIza..."
+                  className="pr-10 font-mono text-xs"
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKeyValue((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showKeyValue ? 'Hide key' : 'Show key'}
+                >
+                  {showKeyValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                The key value is only shown when entered. Make sure it has Maps JavaScript API enabled and billing set up.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsKeyDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveKey}>
+              {editingKey ? 'Save Changes' : 'Add Key'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
