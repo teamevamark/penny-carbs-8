@@ -1285,6 +1285,39 @@ export type Database = {
           },
         ]
       }
+      google_maps_api_keys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          label: string
+          last_four: string | null
+          secret_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          last_four?: string | null
+          secret_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          last_four?: string | null
+          secret_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       indoor_event_services: {
         Row: {
           created_at: string
