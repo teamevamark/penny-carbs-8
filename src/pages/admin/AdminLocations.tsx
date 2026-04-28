@@ -53,7 +53,13 @@ const AdminLocations: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+    if (isSuperAdmin) {
+      fetchGmapsKeys();
+    } else {
+      setIsLoadingKeys(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSuperAdmin]);
 
   const fetchData = async () => {
     try {
@@ -68,6 +74,108 @@ const AdminLocations: React.FC = () => {
       console.error('Error fetching data:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ===== Google Maps Keys =====
+  const fetchGmapsKeys = async () => {
+    setIsLoadingKeys(true);
+    try {
+      const { data, error } = await supabase
+        .from('google_maps_api_keys')
+        .select('id, label, api_key, is_active, last_four, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setGmapsKeys((data || []) as GMapsKey[]);
+    } catch (err: any) {
+      console.error('Error fetching gmaps keys:', err);
+      toast({ title: 'Failed to load Google Maps keys', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsLoadingKeys(false);
+    }
+  };
+
+  const handleOpenKeyDialog = (key?: GMapsKey) => {
+    if (key) {
+      setEditingKey(key);
+      setKeyFormData({ label: key.label, api_key: '' });
+    } else {
+      setEditingKey(null);
+      setKeyFormData({ label: '', api_key: '' });
+    }
+    setShowKeyValue(false);
+    setIsKeyDialogOpen(true);
+  };
+
+  const handleSaveKey = async () => {
+    if (!keyFormData.label.trim()) {
+      toast({ title: 'Label is required', variant: 'destructive' });
+      return;
+    }
+    if (!editingKey && !keyFormData.api_key.trim()) {
+      toast({ title: 'API key is required', variant: 'destructive' });
+      return;
+    }
+    try {
+      if (editingKey) {
+        const update: Record<string, any> = { label: keyFormData.label.trim() };
+        if (keyFormData.api_key.trim()) {
+          update.api_key = keyFormData.api_key.trim();
+          update.last_four = keyFormData.api_key.trim().slice(-4);
+        }
+        const { error } = await supabase
+          .from('google_maps_api_keys')
+          .update(update)
+          .eq('id', editingKey.id);
+        if (error) throw error;
+        toast({ title: 'API key updated' });
+      } else {
+        const trimmed = keyFormData.api_key.trim();
+        const { error } = await supabase
+          .from('google_maps_api_keys')
+          .insert({
+            label: keyFormData.label.trim(),
+            api_key: trimmed,
+            last_four: trimmed.slice(-4),
+            is_active: true,
+          });
+        if (error) throw error;
+        toast({ title: 'API key added' });
+      }
+      setIsKeyDialogOpen(false);
+      fetchGmapsKeys();
+    } catch (err: any) {
+      console.error('Error saving gmaps key:', err);
+      toast({ title: 'Failed to save key', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleToggleKeyActive = async (key: GMapsKey, checked: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('google_maps_api_keys')
+        .update({ is_active: checked })
+        .eq('id', key.id);
+      if (error) throw error;
+      toast({ title: checked ? 'Key activated' : 'Key deactivated' });
+      fetchGmapsKeys();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteKey = async (key: GMapsKey) => {
+    if (!confirm(`Delete key "${key.label}"?`)) return;
+    try {
+      const { error } = await supabase
+        .from('google_maps_api_keys')
+        .delete()
+        .eq('id', key.id);
+      if (error) throw error;
+      toast({ title: 'Key deleted' });
+      fetchGmapsKeys();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
   };
 
