@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit2, Trash2, MapPin } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, MapPin, Key, Eye, EyeOff } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const AdminLocations: React.FC = () => {
