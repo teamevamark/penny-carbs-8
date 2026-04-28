@@ -32,7 +32,24 @@ const AdminLocations: React.FC = () => {
   const [editingPanchayat, setEditingPanchayat] = useState<Panchayat | null>(null);
   const [panchayatFormData, setPanchayatFormData] = useState({ name: '', code: '', ward_count: '25' });
 
+  // Google Maps API Keys
+  type GMapsKey = {
+    id: string;
+    label: string;
+    api_key: string;
+    is_active: boolean;
+    last_four: string | null;
+    created_at: string;
+  };
+  const [gmapsKeys, setGmapsKeys] = useState<GMapsKey[]>([]);
+  const [isLoadingKeys, setIsLoadingKeys] = useState(true);
+  const [isKeyDialogOpen, setIsKeyDialogOpen] = useState(false);
+  const [editingKey, setEditingKey] = useState<GMapsKey | null>(null);
+  const [keyFormData, setKeyFormData] = useState({ label: '', api_key: '' });
+  const [showKeyValue, setShowKeyValue] = useState(false);
+
   const isAdmin = role === 'super_admin' || role === 'admin';
+  const isSuperAdmin = role === 'super_admin';
 
   useEffect(() => {
     fetchData();
