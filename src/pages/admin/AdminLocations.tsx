@@ -361,6 +361,81 @@ const AdminLocations: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Google Maps API Keys (super_admin only) */}
+        {isSuperAdmin && (
+          <section className="mt-8">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-display text-base font-semibold flex items-center gap-2">
+                  <Key className="h-4 w-4" /> Google Maps API Keys
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Add multiple keys to spread quota. The app picks one at random per session from the active keys.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => handleOpenKeyDialog()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Key
+              </Button>
+            </div>
+
+            {isLoadingKeys ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 rounded-xl" />
+                <Skeleton className="h-16 rounded-xl" />
+              </div>
+            ) : gmapsKeys.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-8 text-center">
+                  <Key className="h-8 w-8 text-muted-foreground" />
+                  <p className="mt-2 text-sm text-muted-foreground">No API keys yet</p>
+                  <Button size="sm" className="mt-3" onClick={() => handleOpenKeyDialog()}>
+                    <Plus className="mr-2 h-4 w-4" /> Add First Key
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {gmapsKeys.map((k) => (
+                  <Card key={k.id}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Key className="h-5 w-5 text-primary shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{k.label}</p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            ••••••••••••••••{k.last_four || '????'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={k.is_active}
+                          onCheckedChange={(checked) => handleToggleKeyActive(k, checked)}
+                        />
+                        <Badge variant={k.is_active ? 'default' : 'secondary'}>
+                          {k.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenKeyDialog(k)}>
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive"
+                          onClick={() => handleDeleteKey(k)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* Panchayat Dialog */}
