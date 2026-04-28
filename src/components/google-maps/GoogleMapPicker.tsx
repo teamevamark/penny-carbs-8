@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { MapPin, Crosshair, Loader2 } from 'lucide-react';
+import { useGoogleMapsKey } from '@/hooks/useGoogleMapsKey';
 
 interface GoogleMapPickerProps {
   latitude?: number | null;
@@ -23,8 +24,9 @@ const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
   onLocationChange,
   height = '250px',
 }) => {
+  const { apiKey, isLoading: isKeyLoading } = useGoogleMapsKey();
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey,
   });
 
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -75,7 +77,7 @@ const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || isKeyLoading) {
     return (
       <div className="flex items-center justify-center rounded-lg border bg-muted" style={{ height }}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

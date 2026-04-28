@@ -1287,33 +1287,33 @@ export type Database = {
       }
       google_maps_api_keys: {
         Row: {
+          api_key: string
           created_at: string
           created_by: string | null
           id: string
           is_active: boolean
           label: string
           last_four: string | null
-          secret_name: string
           updated_at: string
         }
         Insert: {
+          api_key: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_active?: boolean
           label: string
           last_four?: string | null
-          secret_name: string
           updated_at?: string
         }
         Update: {
+          api_key?: string
           created_at?: string
           created_by?: string | null
           id?: string
           is_active?: boolean
           label?: string
           last_four?: string | null
-          secret_name?: string
           updated_at?: string
         }
         Relationships: []

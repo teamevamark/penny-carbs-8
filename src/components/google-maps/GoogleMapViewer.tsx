@@ -2,6 +2,7 @@ import React from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Loader2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoogleMapsKey } from '@/hooks/useGoogleMapsKey';
 
 interface GoogleMapViewerProps {
   latitude: number;
@@ -21,8 +22,9 @@ const GoogleMapViewer: React.FC<GoogleMapViewerProps> = ({
   height = '200px',
   label,
 }) => {
+  const { apiKey, isLoading: isKeyLoading } = useGoogleMapsKey();
   const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey,
   });
 
   const center = { lat: latitude, lng: longitude };
@@ -42,7 +44,7 @@ const GoogleMapViewer: React.FC<GoogleMapViewerProps> = ({
     );
   }
 
-  if (!isLoaded) {
+  if (!isLoaded || isKeyLoading) {
     return (
       <div className="flex items-center justify-center rounded-lg border bg-muted" style={{ height }}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
