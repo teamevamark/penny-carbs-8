@@ -2,6 +2,7 @@ import React from 'react';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import { Loader2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoogleMapsKey } from '@/hooks/useGoogleMapsKey';
 
 interface GoogleMapViewerProps {
   latitude: number;
