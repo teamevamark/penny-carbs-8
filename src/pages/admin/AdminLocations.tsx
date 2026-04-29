@@ -48,6 +48,29 @@ const AdminLocations: React.FC = () => {
   const [editingKey, setEditingKey] = useState<GMapsKey | null>(null);
   const [keyFormData, setKeyFormData] = useState({ label: '', api_key: '' });
   const [showKeyValue, setShowKeyValue] = useState(false);
+  const [verifyResults, setVerifyResults] = useState<Record<string, VerifyResult | 'loading'>>({});
+
+  const handleVerifyKey = async (k: GMapsKey) => {
+    setVerifyResults((p) => ({ ...p, [k.id]: 'loading' }));
+    const result = await verifyGoogleMapsKey(k.api_key);
+    setVerifyResults((p) => ({ ...p, [k.id]: result }));
+    toast({
+      title: result.ok ? `✓ ${k.label} works` : `✗ ${k.label} failed`,
+      description: result.message,
+      variant: result.ok ? 'default' : 'destructive',
+    });
+  };
+
+  const handleVerifyActiveSession = async () => {
+    const active = gmapsKeys.filter((k) => k.is_active);
+    if (active.length === 0) {
+      toast({ title: 'No active keys', variant: 'destructive' });
+      return;
+    }
+    for (const k of active) {
+      await handleVerifyKey(k);
+    }
+  };
 
   const isAdmin = role === 'super_admin' || role === 'admin';
   const isSuperAdmin = role === 'super_admin';
