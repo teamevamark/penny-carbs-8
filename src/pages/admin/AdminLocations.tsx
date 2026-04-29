@@ -427,41 +427,85 @@ const AdminLocations: React.FC = () => {
               </Card>
             ) : (
               <div className="space-y-2">
-                {gmapsKeys.map((k) => (
+                {gmapsKeys.map((k) => {
+                  const v = verifyResults[k.id];
+                  const isVerifying = v === 'loading';
+                  const result = v && v !== 'loading' ? v : null;
+                  return (
                   <Card key={k.id}>
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Key className="h-5 w-5 text-primary shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{k.label}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            ••••••••••••••••{k.last_four || '????'}
-                          </p>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Key className="h-5 w-5 text-primary shrink-0" />
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{k.label}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              ••••••••••••••••{k.last_four || '????'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerifyKey(k)}
+                            disabled={isVerifying}
+                          >
+                            {isVerifying ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="h-4 w-4" />
+                            )}
+                            <span className="ml-1 hidden sm:inline">Verify</span>
+                          </Button>
+                          <Switch
+                            checked={k.is_active}
+                            onCheckedChange={(checked) => handleToggleKeyActive(k, checked)}
+                          />
+                          <Badge variant={k.is_active ? 'default' : 'secondary'}>
+                            {k.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenKeyDialog(k)}>
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => handleDeleteKey(k)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={k.is_active}
-                          onCheckedChange={(checked) => handleToggleKeyActive(k, checked)}
-                        />
-                        <Badge variant={k.is_active ? 'default' : 'secondary'}>
-                          {k.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenKeyDialog(k)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => handleDeleteKey(k)}
+                      {result && (
+                        <div
+                          className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+                            result.ok
+                              ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
+                              : 'border-destructive/30 bg-destructive/10 text-destructive'
+                          }`}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          {result.ok ? (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {result.ok ? 'Maps JS initialized' : 'Verification failed'}
+                              <span className="ml-2 font-normal text-muted-foreground">
+                                ({Math.round(result.durationMs)}ms)
+                              </span>
+                            </p>
+                            <p className="break-words">{result.message}</p>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
