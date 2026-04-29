@@ -291,7 +291,7 @@ const AdminLocations: React.FC = () => {
       {/* Page Header */}
       <div className="border-b bg-card px-4 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="font-display text-lg font-semibold">Locations</h1>
+          <h1 className="font-display text-lg font-semibold">Locations <span className="text-xs text-muted-foreground">[role: {role || 'null'}]</span></h1>
           <Button size="sm" onClick={() => handleOpenPanchayatDialog()}>
             <Plus className="mr-2 h-4 w-4" />
             Add Panchayat
