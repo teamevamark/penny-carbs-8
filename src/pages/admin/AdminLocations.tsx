@@ -398,14 +398,16 @@ const AdminLocations: React.FC = () => {
                   Add multiple keys to spread quota. The app picks one at random per session from the active keys.
                 </p>
               </div>
-              <Button size="sm" variant="outline" onClick={handleVerifyActiveSession}>
-                <ShieldCheck className="mr-2 h-4 w-4" />
-                Verify Active
-              </Button>
-              <Button size="sm" onClick={() => handleOpenKeyDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Key
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={handleVerifyActiveSession}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Verify Active
+                </Button>
+                <Button size="sm" onClick={() => handleOpenKeyDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Key
+                </Button>
+              </div>
             </div>
 
             {isLoadingKeys ? (
