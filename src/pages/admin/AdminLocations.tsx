@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit2, Trash2, MapPin, Key, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, MapPin, Key, Eye, EyeOff, ShieldCheck, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { verifyGoogleMapsKey, type VerifyResult } from '@/lib/verifyGoogleMapsKey';
 
 const AdminLocations: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +48,29 @@ const AdminLocations: React.FC = () => {
   const [editingKey, setEditingKey] = useState<GMapsKey | null>(null);
   const [keyFormData, setKeyFormData] = useState({ label: '', api_key: '' });
   const [showKeyValue, setShowKeyValue] = useState(false);
+  const [verifyResults, setVerifyResults] = useState<Record<string, VerifyResult | 'loading'>>({});
+
+  const handleVerifyKey = async (k: GMapsKey) => {
+    setVerifyResults((p) => ({ ...p, [k.id]: 'loading' }));
+    const result = await verifyGoogleMapsKey(k.api_key);
+    setVerifyResults((p) => ({ ...p, [k.id]: result }));
+    toast({
+      title: result.ok ? `✓ ${k.label} works` : `✗ ${k.label} failed`,
+      description: result.message,
+      variant: result.ok ? 'default' : 'destructive',
+    });
+  };
+
+  const handleVerifyActiveSession = async () => {
+    const active = gmapsKeys.filter((k) => k.is_active);
+    if (active.length === 0) {
+      toast({ title: 'No active keys', variant: 'destructive' });
+      return;
+    }
+    for (const k of active) {
+      await handleVerifyKey(k);
+    }
+  };
 
   const isAdmin = role === 'super_admin' || role === 'admin';
   const isSuperAdmin = role === 'super_admin';
@@ -374,10 +398,16 @@ const AdminLocations: React.FC = () => {
                   Add multiple keys to spread quota. The app picks one at random per session from the active keys.
                 </p>
               </div>
-              <Button size="sm" onClick={() => handleOpenKeyDialog()}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Key
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={handleVerifyActiveSession}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Verify Active
+                </Button>
+                <Button size="sm" onClick={() => handleOpenKeyDialog()}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Key
+                </Button>
+              </div>
             </div>
 
             {isLoadingKeys ? (
@@ -397,41 +427,85 @@ const AdminLocations: React.FC = () => {
               </Card>
             ) : (
               <div className="space-y-2">
-                {gmapsKeys.map((k) => (
+                {gmapsKeys.map((k) => {
+                  const v = verifyResults[k.id];
+                  const isVerifying = v === 'loading';
+                  const result = v && v !== 'loading' ? v : null;
+                  return (
                   <Card key={k.id}>
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Key className="h-5 w-5 text-primary shrink-0" />
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">{k.label}</p>
-                          <p className="text-xs text-muted-foreground font-mono">
-                            ••••••••••••••••{k.last_four || '????'}
-                          </p>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Key className="h-5 w-5 text-primary shrink-0" />
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">{k.label}</p>
+                            <p className="text-xs text-muted-foreground font-mono">
+                              ••••••••••••••••{k.last_four || '????'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerifyKey(k)}
+                            disabled={isVerifying}
+                          >
+                            {isVerifying ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldCheck className="h-4 w-4" />
+                            )}
+                            <span className="ml-1 hidden sm:inline">Verify</span>
+                          </Button>
+                          <Switch
+                            checked={k.is_active}
+                            onCheckedChange={(checked) => handleToggleKeyActive(k, checked)}
+                          />
+                          <Badge variant={k.is_active ? 'default' : 'secondary'}>
+                            {k.is_active ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenKeyDialog(k)}>
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => handleDeleteKey(k)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={k.is_active}
-                          onCheckedChange={(checked) => handleToggleKeyActive(k, checked)}
-                        />
-                        <Badge variant={k.is_active ? 'default' : 'secondary'}>
-                          {k.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenKeyDialog(k)}>
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => handleDeleteKey(k)}
+                      {result && (
+                        <div
+                          className={`flex items-start gap-2 rounded-md border px-3 py-2 text-xs ${
+                            result.ok
+                              ? 'border-green-500/30 bg-green-500/10 text-green-700 dark:text-green-400'
+                              : 'border-destructive/30 bg-destructive/10 text-destructive'
+                          }`}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          {result.ok ? (
+                            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {result.ok ? 'Maps JS initialized' : 'Verification failed'}
+                              <span className="ml-2 font-normal text-muted-foreground">
+                                ({Math.round(result.durationMs)}ms)
+                              </span>
+                            </p>
+                            <p className="break-words">{result.message}</p>
+                          </div>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
