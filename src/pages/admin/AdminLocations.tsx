@@ -17,8 +17,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, Edit2, Trash2, MapPin, Key, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Edit2, Trash2, MapPin, Key, Eye, EyeOff, ShieldCheck, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { verifyGoogleMapsKey, type VerifyResult } from '@/lib/verifyGoogleMapsKey';
 
 const AdminLocations: React.FC = () => {
   const navigate = useNavigate();
