@@ -151,9 +151,9 @@ export function useCustomerDivisions() {
   });
 }
 
-export function useCustomerDivisionItems(divisionId: string | null) {
+export function useCustomerDivisionItems(divisionId: string | null, customerPanchayatId?: string | null) {
   return useQuery({
-    queryKey: ['customer-division-items-with-cooks', divisionId],
+    queryKey: ['customer-division-items-with-cooks', divisionId, customerPanchayatId],
     queryFn: async () => {
       if (!divisionId) return [];
 
