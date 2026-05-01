@@ -192,16 +192,21 @@ export function useCustomerDivisionItems(divisionId: string | null, customerPanc
             kitchen_name,
             rating,
             is_active,
-            is_available
+            is_available,
+            panchayat_id,
+            assigned_panchayat_ids
           )
         `);
 
       if (cookDishesError) throw cookDishesError;
 
-      // Filter to only active and available cooks
-      const activeCookDishes = (cookDishes || []).filter((cd: any) => 
-        cd.cooks?.is_active === true && cd.cooks?.is_available === true
-      );
+      // Filter to only active and available cooks, and (if provided) those serving the customer's panchayat
+      const activeCookDishes = (cookDishes || []).filter((cd: any) => {
+        if (!(cd.cooks?.is_active === true && cd.cooks?.is_available === true)) return false;
+        if (!customerPanchayatId) return true;
+        const assigned: string[] = cd.cooks.assigned_panchayat_ids || [];
+        return cd.cooks.panchayat_id === customerPanchayatId || assigned.includes(customerPanchayatId);
+      });
 
       // Build a map of food_item_id -> cook allocations
       const cookAllocationMap = new Map<string, any[]>();
