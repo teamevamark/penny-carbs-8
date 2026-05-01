@@ -29,6 +29,8 @@ export type Database = {
           perm_reports: string
           perm_settlements: string
           perm_special_offers: string
+          perm_storage: string
+          perm_users: string
           updated_at: string
           user_id: string
         }
@@ -46,6 +48,8 @@ export type Database = {
           perm_reports?: string
           perm_settlements?: string
           perm_special_offers?: string
+          perm_storage?: string
+          perm_users?: string
           updated_at?: string
           user_id: string
         }
@@ -63,6 +67,8 @@ export type Database = {
           perm_reports?: string
           perm_settlements?: string
           perm_special_offers?: string
+          perm_storage?: string
+          perm_users?: string
           updated_at?: string
           user_id?: string
         }
@@ -662,6 +668,8 @@ export type Database = {
           is_active: boolean
           is_available: boolean
           kitchen_name: string
+          latitude: number | null
+          longitude: number | null
           mobile_number: string
           panchayat_id: string | null
           password_hash: string | null
@@ -679,6 +687,8 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           kitchen_name: string
+          latitude?: number | null
+          longitude?: number | null
           mobile_number: string
           panchayat_id?: string | null
           password_hash?: string | null
@@ -696,6 +706,8 @@ export type Database = {
           is_active?: boolean
           is_available?: boolean
           kitchen_name?: string
+          latitude?: number | null
+          longitude?: number | null
           mobile_number?: string
           panchayat_id?: string | null
           password_hash?: string | null
@@ -887,6 +899,7 @@ export type Database = {
       }
       delivery_rules: {
         Row: {
+          base_distance_km: number
           charge_above_threshold: number | null
           created_at: string
           free_delivery_above: number | null
@@ -900,6 +913,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          base_distance_km?: number
           charge_above_threshold?: number | null
           created_at?: string
           free_delivery_above?: number | null
@@ -913,6 +927,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          base_distance_km?: number
           charge_above_threshold?: number | null
           created_at?: string
           free_delivery_above?: number | null
@@ -1270,6 +1285,39 @@ export type Database = {
           },
         ]
       }
+      google_maps_api_keys: {
+        Row: {
+          api_key: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          label: string
+          last_four: string | null
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          last_four?: string | null
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          last_four?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       indoor_event_services: {
         Row: {
           created_at: string
@@ -1553,6 +1601,7 @@ export type Database = {
           delivered_at: string | null
           delivery_address: string | null
           delivery_amount: number | null
+          delivery_distance_km: number | null
           delivery_earnings: number | null
           delivery_eta: string | null
           delivery_instructions: string | null
@@ -1597,6 +1646,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address?: string | null
           delivery_amount?: number | null
+          delivery_distance_km?: number | null
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null
@@ -1641,6 +1691,7 @@ export type Database = {
           delivered_at?: string | null
           delivery_address?: string | null
           delivery_amount?: number | null
+          delivery_distance_km?: number | null
           delivery_earnings?: number | null
           delivery_eta?: string | null
           delivery_instructions?: string | null
