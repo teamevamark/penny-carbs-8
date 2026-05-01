@@ -32,12 +32,14 @@ interface CartItem {
 const CloudKitchenOrder: React.FC = () => {
   useServiceModuleGuard('cloud_kitchen');
   const navigate = useNavigate();
+  const { selectedPanchayat } = useLocation();
   const [selectedDivision, setSelectedDivision] = useState<ActiveDivision | null>(null);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
 
   const { data: divisions, isLoading: divisionsLoading } = useCustomerDivisions();
   const { data: items, isLoading: itemsLoading } = useCustomerDivisionItems(
-    selectedDivision?.id || null
+    selectedDivision?.id || null,
+    selectedPanchayat?.id || null
   );
 
   // Group items by food_item_id
