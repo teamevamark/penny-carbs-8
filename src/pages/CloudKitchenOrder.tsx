@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useServiceModuleGuard } from '@/hooks/useServiceModuleGuard';
+import { useLocation } from '@/contexts/LocationContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
