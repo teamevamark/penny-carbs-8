@@ -41,6 +41,7 @@ interface PopularItemsProps {
   limit?: number;
   gradientClass?: string;
   bgGradient?: string;
+  layout?: 'carousel' | 'grid';
 }
 
 const serviceTypeLabels: Record<ServiceType, string> = {
@@ -55,6 +56,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   limit = 6,
   gradientClass,
   bgGradient,
+  layout = 'carousel',
 }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
