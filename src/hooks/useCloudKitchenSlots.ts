@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CloudKitchenSlot } from '@/types/events';
+import { checkIfOrderingOpen } from '@/lib/cloudKitchenSlotUtils';
 
 export function useCloudKitchenSlots() {
   return useQuery({
@@ -62,18 +63,28 @@ export function formatSlotTime(timeString: string): string {
   return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
 }
 
-// Hook to get IDs of active cloud kitchen slots
+// Hook to get IDs of cloud kitchen slots that are currently OPEN for ordering
+// (meal-time window is active per checkIfOrderingOpen). Auto-refreshes every minute
+// so items appear/disappear as windows open and close.
 export function useActiveCloudKitchenSlotIds() {
   return useQuery({
     queryKey: ['active-cloud-kitchen-slot-ids'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('cloud_kitchen_slots')
-        .select('id')
+        .select('id, start_time, end_time, cutoff_hours_before')
         .eq('is_active', true);
 
       if (error) throw error;
-      return new Set((data || []).map((s) => s.id));
+      const open = (data || []).filter((s: any) =>
+        checkIfOrderingOpen({
+          start_time: s.start_time,
+          end_time: s.end_time,
+          cutoff_hours_before: s.cutoff_hours_before,
+        }).isOpen
+      );
+      return new Set(open.map((s: any) => s.id));
     },
+    refetchInterval: 60000,
   });
 }
