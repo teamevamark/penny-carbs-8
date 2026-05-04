@@ -75,8 +75,6 @@ const Index: React.FC = () => {
           <PopularItems 
             serviceType="homemade" 
             title="Homemade Favorites (വീട്ടിലെ ഭക്ഷണങ്ങൾ)" 
-            limit={12}
-            layout="grid"
             gradientClass="text-gradient-homemade" 
             bgGradient="bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950/30 dark:via-emerald-950/20 dark:to-teal-950/10" 
           />

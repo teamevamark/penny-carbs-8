@@ -13,7 +13,7 @@ import { Plus, Clock, ChevronRight, Lock } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 import { useLowestCookPrices } from '@/hooks/useLowestCookPrices';
-import { useActiveCloudKitchenSlotIds } from '@/hooks/useCloudKitchenSlots';
+
 
 // Helper to calculate customer display price (base + margin), using lowest cook price for homemade
 const getCustomerPrice = (item: FoodItemWithImages, lowestCookPrices?: Map<string, number | null>): number => {
@@ -41,7 +41,6 @@ interface PopularItemsProps {
   limit?: number;
   gradientClass?: string;
   bgGradient?: string;
-  layout?: 'carousel' | 'grid';
 }
 
 const serviceTypeLabels: Record<ServiceType, string> = {
@@ -56,7 +55,6 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   limit = 6,
   gradientClass,
   bgGradient,
-  layout = 'carousel',
 }) => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -101,14 +99,8 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         if ((isHomemade || isCloudKitchenType) && allocatedIds) {
           filtered = filtered.filter(item => allocatedIds.has(item.id));
         }
-        // For cloud kitchen items, only show those from active divisions
-        if (isCloudKitchenType && activeSlotIds) {
-          filtered = filtered.filter(item => {
-            const slotId = (item as any).cloud_kitchen_slot_id;
-            // Require a valid active slot — items without a slot are excluded
-            return slotId && activeSlotIds.has(slotId);
-          });
-        }
+        // Note: Active-slot enforcement intentionally omitted on the home carousel —
+        // it still applies on the actual ordering pages (/cloud-kitchen, checkout).
         setItems(filtered);
       } catch (error) {
         console.error('Error fetching items:', error);
@@ -117,7 +109,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
       }
     };
     fetchItems();
-  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType, activeSlotIds]);
+  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
@@ -135,11 +127,9 @@ const PopularItems: React.FC<PopularItemsProps> = ({
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-20" />
         </div>
-        <div className={layout === 'grid'
-          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 px-4 pb-2'
-          : 'flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar'}>
+        <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className={`h-56 rounded-xl ${layout === 'grid' ? 'w-full' : 'w-40 flex-shrink-0'}`} />
+            <Skeleton key={i} className="h-56 w-40 flex-shrink-0 rounded-xl" />
           ))}
         </div>
       </section>
@@ -167,9 +157,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         </Button>
       </div>
 
-      <div className={layout === 'grid'
-        ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 px-4 pb-2'
-        : 'flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar'}>
+      <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
         {items.map((item) => {
           const primaryImage = item.images?.find((img) => img.is_primary) || item.images?.[0];
           const isIndoorEvents = serviceType === 'indoor_events';
@@ -179,7 +167,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
           return (
             <Card
               key={item.id}
-              className={`overflow-hidden transition-all ${layout === 'grid' ? 'w-full' : 'w-40 flex-shrink-0'} ${isComingSoon ? 'opacity-75 cursor-default' : 'cursor-pointer hover:shadow-lg'}`}
+              className={`w-40 flex-shrink-0 overflow-hidden transition-all ${isComingSoon ? 'opacity-75 cursor-default' : 'cursor-pointer hover:shadow-lg'}`}
               onClick={() => {
                 if (isComingSoon) return;
                 isIndoorEvents
