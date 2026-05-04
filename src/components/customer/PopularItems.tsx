@@ -65,10 +65,11 @@ const PopularItems: React.FC<PopularItemsProps> = ({
   const [items, setItems] = useState<FoodItemWithImages[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // For homemade, wait for allocatedIds to load before fetching
+  // For homemade and cloud kitchen, wait for allocatedIds to load before fetching
   const isHomemade = serviceType === 'homemade';
   const isCloudKitchenType = serviceType === 'cloud_kitchen';
-  const allocatedIdsReady = !isHomemade || !allocatedIdsLoading;
+  const needsCookAllocation = isHomemade || isCloudKitchenType;
+  const allocatedIdsReady = !needsCookAllocation || !allocatedIdsLoading;
 
   useEffect(() => {
     if (!allocatedIdsReady) return;
@@ -95,11 +96,10 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         if (error) throw error;
         let filtered = data as FoodItemWithImages[];
         // For homemade and cloud kitchen items, only show those allocated to an active cook
-        if ((isHomemade || isCloudKitchenType) && allocatedIds) {
-          filtered = filtered.filter(item => allocatedIds.has(item.id));
+        if (needsCookAllocation) {
+          const ids = allocatedIds ?? new Set<string>();
+          filtered = filtered.filter(item => ids.has(item.id));
         }
-        // Note: Active-slot enforcement intentionally omitted on the home carousel —
-        // it still applies on the actual ordering pages (/cloud-kitchen, checkout).
         setItems(filtered);
       } catch (error) {
         console.error('Error fetching items:', error);
@@ -108,7 +108,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
       }
     };
     fetchItems();
-  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType]);
+  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, needsCookAllocation]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
