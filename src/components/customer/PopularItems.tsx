@@ -109,7 +109,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
       }
     };
     fetchItems();
-  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType, activeSlotIds]);
+  }, [serviceType, limit, selectedPanchayat, allocatedIds, allocatedIdsReady, isHomemade, isCloudKitchenType]);
 
   const handleAddToCart = async (e: React.MouseEvent, item: FoodItemWithImages) => {
     e.stopPropagation();
