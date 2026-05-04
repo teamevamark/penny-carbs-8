@@ -13,7 +13,7 @@ import { Plus, Clock, ChevronRight, Lock } from 'lucide-react';
 import { calculatePlatformMargin } from '@/lib/priceUtils';
 import { useCookAllocatedItemIds } from '@/hooks/useCookAllocatedItems';
 import { useLowestCookPrices } from '@/hooks/useLowestCookPrices';
-import { useActiveCloudKitchenSlotIds } from '@/hooks/useCloudKitchenSlots';
+
 
 // Helper to calculate customer display price (base + margin), using lowest cook price for homemade
 const getCustomerPrice = (item: FoodItemWithImages, lowestCookPrices?: Map<string, number | null>): number => {
