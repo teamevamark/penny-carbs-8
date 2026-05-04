@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { CloudKitchenSlot } from '@/types/events';
+import { checkIfOrderingOpen } from '@/lib/cloudKitchenSlotUtils';
 
 export function useCloudKitchenSlots() {
   return useQuery({
