@@ -99,14 +99,8 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         if ((isHomemade || isCloudKitchenType) && allocatedIds) {
           filtered = filtered.filter(item => allocatedIds.has(item.id));
         }
-        // For cloud kitchen items, only show those from active divisions
-        if (isCloudKitchenType && activeSlotIds) {
-          filtered = filtered.filter(item => {
-            const slotId = (item as any).cloud_kitchen_slot_id;
-            // Require a valid active slot — items without a slot are excluded
-            return slotId && activeSlotIds.has(slotId);
-          });
-        }
+        // Note: Active-slot enforcement intentionally omitted on the home carousel —
+        // it still applies on the actual ordering pages (/cloud-kitchen, checkout).
         setItems(filtered);
       } catch (error) {
         console.error('Error fetching items:', error);
