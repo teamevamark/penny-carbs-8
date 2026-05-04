@@ -135,9 +135,11 @@ const PopularItems: React.FC<PopularItemsProps> = ({
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-20" />
         </div>
-        <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
+        <div className={layout === 'grid'
+          ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 px-4 pb-2'
+          : 'flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar'}>
           {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="h-56 w-40 flex-shrink-0 rounded-xl" />
+            <Skeleton key={i} className={`h-56 rounded-xl ${layout === 'grid' ? 'w-full' : 'w-40 flex-shrink-0'}`} />
           ))}
         </div>
       </section>
@@ -165,7 +167,9 @@ const PopularItems: React.FC<PopularItemsProps> = ({
         </Button>
       </div>
 
-      <div className="flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar">
+      <div className={layout === 'grid'
+        ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 px-4 pb-2'
+        : 'flex gap-4 overflow-x-auto px-4 pb-2 no-scrollbar'}>
         {items.map((item) => {
           const primaryImage = item.images?.find((img) => img.is_primary) || item.images?.[0];
           const isIndoorEvents = serviceType === 'indoor_events';
@@ -175,7 +179,7 @@ const PopularItems: React.FC<PopularItemsProps> = ({
           return (
             <Card
               key={item.id}
-              className={`w-40 flex-shrink-0 overflow-hidden transition-all ${isComingSoon ? 'opacity-75 cursor-default' : 'cursor-pointer hover:shadow-lg'}`}
+              className={`overflow-hidden transition-all ${layout === 'grid' ? 'w-full' : 'w-40 flex-shrink-0'} ${isComingSoon ? 'opacity-75 cursor-default' : 'cursor-pointer hover:shadow-lg'}`}
               onClick={() => {
                 if (isComingSoon) return;
                 isIndoorEvents
